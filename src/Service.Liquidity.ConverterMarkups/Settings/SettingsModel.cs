@@ -5,13 +5,16 @@ namespace Service.Liquidity.ConverterMarkups.Settings
 {
     public class SettingsModel
     {
-        [YamlProperty("Liquidity.ConverterMarkups.SeqServiceUrl")]
+        [YamlProperty("ConverterMarkups.SeqServiceUrl")]
         public string SeqServiceUrl { get; set; }
 
-        [YamlProperty("Liquidity.ConverterMarkups.ZipkinUrl")]
+        [YamlProperty("ConverterMarkups.ZipkinUrl")]
         public string ZipkinUrl { get; set; }
 
-        [YamlProperty("Liquidity.ConverterMarkups.ElkLogs")]
+        [YamlProperty("ConverterMarkups.ElkLogs")]
         public LogElkSettings ElkLogs { get; set; }
+
+        [YamlProperty("ConverterMarkups.MyNoSqlWriterUrl")]
+        public string MyNoSqlWriterUrl { get; set; }
     }
 }

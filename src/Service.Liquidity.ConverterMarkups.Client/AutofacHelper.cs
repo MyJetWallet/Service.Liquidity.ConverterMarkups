@@ -11,7 +11,7 @@ namespace Service.Liquidity.ConverterMarkups.Client
         {
             var factory = new ConverterMarkupsClientFactory(grpcServiceUrl);
 
-            builder.RegisterInstance(factory.GetHelloService()).As<IHelloService>().SingleInstance();
+            builder.RegisterInstance(factory.GetHelloService()).As<IConverterMarkupService>().SingleInstance();
         }
     }
 }

@@ -11,6 +11,6 @@ namespace Service.Liquidity.ConverterMarkups.Client
         {
         }
 
-        public IHelloService GetHelloService() => CreateGrpcService<IHelloService>();
+        public IConverterMarkupService GetHelloService() => CreateGrpcService<IConverterMarkupService>();
     }
 }
