@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using MyNoSqlServer.Abstractions;
 using Newtonsoft.Json;
 using Service.AssetsDictionary.Client;
+using Service.AssetsDictionary.MyNoSql;
 using Service.Liquidity.ConverterMarkups.Domain.Models;
 
 namespace Service.Liquidity.ConverterMarkups.Services
@@ -13,17 +14,20 @@ namespace Service.Liquidity.ConverterMarkups.Services
     public class OverviewHandler
     {
         private readonly ILogger<OverviewHandler> _logger;
+        private readonly IMyNoSqlServerDataWriter<ConverterMarkupNoSqlEntity> _markupWriter;
         private readonly IMyNoSqlServerDataWriter<ConverterMarkupOverviewNoSqlEntity> _overviewWriter;
-        private readonly IAssetsDictionaryClient _assetsDictionaryClient;
+        private readonly IMyNoSqlServerDataReader<AssetNoSqlEntity> _assetsReader;
         private const string AllSymbol = "*";
 
         public OverviewHandler(IMyNoSqlServerDataWriter<ConverterMarkupOverviewNoSqlEntity> overviewWriter,
-            IAssetsDictionaryClient assetsDictionaryClient, 
-            ILogger<OverviewHandler> logger)
+            ILogger<OverviewHandler> logger, 
+            IMyNoSqlServerDataWriter<ConverterMarkupNoSqlEntity> markupWriter, 
+            IMyNoSqlServerDataReader<AssetNoSqlEntity> assetsReader)
         {
             _overviewWriter = overviewWriter;
-            _assetsDictionaryClient = assetsDictionaryClient;
             _logger = logger;
+            _markupWriter = markupWriter;
+            _assetsReader = assetsReader;
         }
 
         public async Task<MarkupOverview> GetOverview()
@@ -33,12 +37,27 @@ namespace Service.Liquidity.ConverterMarkups.Services
             return overEntity;
         }
         
+        public async Task UpdateOverview()
+        {
+            var markupSettings = await _markupWriter.GetAsync();
+            var assets = _assetsReader.Get();
+            
+            await UpdateOverview(markupSettings.Select(e => e.ConverterMarkup).ToList(), 
+                assets.Select(e => e.Symbol).Distinct().ToList());
+        }
+        
+        public async Task UpdateOverview(List<string> assets)
+        {
+            var markupSettings = await _markupWriter.GetAsync();
+            await UpdateOverview(markupSettings.Select(e => e.ConverterMarkup).ToList(), assets);
+        }
         public async Task UpdateOverview(List<ConverterMarkup> markupSettings)
         {
-            var assets = _assetsDictionaryClient.GetAllAssets();
-            await UpdateOverview(markupSettings, assets.Select(e => e.Symbol).ToList());
+            var assets = _assetsReader.Get();
+            await UpdateOverview(markupSettings, assets.Select(e => e.Symbol).Distinct().ToList());
         }
-        public async Task UpdateOverview(List<ConverterMarkup> markupSettings, List<string> assets)
+
+        private async Task UpdateOverview(IReadOnlyCollection<ConverterMarkup> markupSettings, IReadOnlyCollection<string> assets)
         {
             var overview = new MarkupOverview()
             {
@@ -57,8 +76,15 @@ namespace Service.Liquidity.ConverterMarkups.Services
                     });
                 }
             }
-            await _overviewWriter.InsertOrReplaceAsync(ConverterMarkupOverviewNoSqlEntity.Create(overview));
-            _logger.LogInformation("Overview is updated: {overviewJson}", JsonConvert.SerializeObject(overview));
+            if (overview.Overview.Any())
+            {
+                await _overviewWriter.InsertOrReplaceAsync(ConverterMarkupOverviewNoSqlEntity.Create(overview));
+                _logger.LogInformation("Overview is updated: {overviewJson}", JsonConvert.SerializeObject(overview));
+            }
+            else
+            {
+                _logger.LogError("Cannot update markup overview");
+            }
         }
 
         private decimal GetMarkup(IReadOnlyCollection<ConverterMarkup> converterMarkups, string assetFrom, string assetTo)

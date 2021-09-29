@@ -1,9 +1,8 @@
 ﻿using Autofac;
-using Autofac.Core;
-using Autofac.Core.Registration;
 using MyJetWallet.Sdk.NoSql;
-using Service.AssetsDictionary.Client;
+using Service.AssetsDictionary.MyNoSql;
 using Service.Liquidity.ConverterMarkups.Domain.Models;
+using Service.Liquidity.ConverterMarkups.Jobs;
 using Service.Liquidity.ConverterMarkups.Services;
 
 namespace Service.Liquidity.ConverterMarkups.Modules
@@ -18,9 +17,10 @@ namespace Service.Liquidity.ConverterMarkups.Modules
                 ConverterMarkupOverviewNoSqlEntity.TableName);
             
             var noSqlClient = builder.CreateNoSqlClient(Program.ReloadedSettings(e => e.MyNoSqlReaderHostPort));
-            builder.RegisterAssetsDictionaryClients(noSqlClient);
-
+            builder.RegisterMyNoSqlReader<AssetNoSqlEntity>(noSqlClient, AssetNoSqlEntity.TableName);
+            
             builder.RegisterType<OverviewHandler>().AsSelf().SingleInstance();
+            builder.RegisterType<AssetDictionaryHandlerJob>().As<IStartable>().AutoActivate().SingleInstance();
         }
     }
 }

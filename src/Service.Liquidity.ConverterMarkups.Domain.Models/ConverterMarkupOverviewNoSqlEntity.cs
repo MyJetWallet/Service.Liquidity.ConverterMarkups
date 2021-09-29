@@ -6,7 +6,7 @@ namespace Service.Liquidity.ConverterMarkups.Domain.Models
     {
         public const string TableName = "jetwallet-converter-markup-overview";
         private static string GeneratePartitionKey() => "overview";
-        private static string GenerateRowKey() => string.Empty;
+        private static string GenerateRowKey() => "overview";
 
         public MarkupOverview MarkupOverview;
         

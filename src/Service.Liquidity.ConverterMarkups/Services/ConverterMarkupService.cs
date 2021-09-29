@@ -51,7 +51,7 @@ namespace Service.Liquidity.ConverterMarkups.Services
             try
             {
                 var noSqlEntities = request.MarkupSettings.Select(ConverterMarkupNoSqlEntity.Create);
-                await _markupWriter.CleanAndBulkInsertAsync(noSqlEntities);
+                await _markupWriter.BulkInsertOrReplaceAsync(noSqlEntities);
 
                 await _overviewHandler.UpdateOverview(request.MarkupSettings);
                 
@@ -64,6 +64,29 @@ namespace Service.Liquidity.ConverterMarkups.Services
             {
                 _logger.LogError(ex, ex.Message);
                 return new UpsertMarkupSettingsResponse()
+                {
+                    Success = false,
+                    ErrorMessage = ex.Message
+                };
+            }
+        }
+
+        public async Task<RemoveMarkupSettingsResponse> RemoveMarkupSettingsAsync(RemoveMarkupSettingsRequest request)
+        {
+            try
+            {
+                await _markupWriter.DeleteAsync(request.FromAsset, request.ToAsset);
+                await _overviewHandler.UpdateOverview();
+                
+                return new RemoveMarkupSettingsResponse()
+                {
+                    Success = true
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, ex.Message);
+                return new RemoveMarkupSettingsResponse()
                 {
                     Success = false,
                     ErrorMessage = ex.Message
