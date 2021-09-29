@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using MyNoSqlServer.Abstractions;
+using Service.Liquidity.ConverterMarkups.Domain.Models;
 using Service.Liquidity.ConverterMarkups.Grpc;
 using Service.Liquidity.ConverterMarkups.Grpc.Models;
 
@@ -9,25 +12,95 @@ namespace Service.Liquidity.ConverterMarkups.Services
     public class ConverterMarkupService: IConverterMarkupService
     {
         private readonly ILogger<ConverterMarkupService> _logger;
+        private readonly IMyNoSqlServerDataWriter<ConverterMarkupNoSqlEntity> _markupWriter;
+        private readonly OverviewHandler _overviewHandler;
 
-        public ConverterMarkupService(ILogger<ConverterMarkupService> logger)
+        public ConverterMarkupService(ILogger<ConverterMarkupService> logger, 
+            IMyNoSqlServerDataWriter<ConverterMarkupNoSqlEntity> markupWriter, 
+            OverviewHandler overviewHandler)
         {
             _logger = logger;
+            _markupWriter = markupWriter;
+            _overviewHandler = overviewHandler;
         }
 
-        public Task<GetMarkupSettingsResponse> GetMarkupSettingsAsync()
+        public async Task<GetMarkupSettingsResponse> GetMarkupSettingsAsync()
         {
-            throw new NotImplementedException();
+            try
+            {
+                var markups = await _markupWriter.GetAsync();
+                return new GetMarkupSettingsResponse()
+                {
+                    Success = true,
+                    MarkupSettings = markups.Select(e => e.ConverterMarkup).ToList()
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, ex.Message);
+                return new GetMarkupSettingsResponse()
+                {
+                    Success = false,
+                    ErrorMessage = ex.Message
+                };
+            }
         }
 
-        public Task<UpsertMarkupSettingsResponse> UpsertMarkupSettingsAsync(UpsertMarkupSettingsRequest request)
+        public async Task<UpsertMarkupSettingsResponse> UpsertMarkupSettingsAsync(UpsertMarkupSettingsRequest request)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var noSqlEntities = request.MarkupSettings.Select(ConverterMarkupNoSqlEntity.Create);
+                await _markupWriter.CleanAndBulkInsertAsync(noSqlEntities);
+
+                await _overviewHandler.UpdateOverview(request.MarkupSettings);
+                
+                return new UpsertMarkupSettingsResponse()
+                {
+                    Success = true
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, ex.Message);
+                return new UpsertMarkupSettingsResponse()
+                {
+                    Success = false,
+                    ErrorMessage = ex.Message
+                };
+            }
         }
 
-        public Task<GetMarkupOverviewResponse> GetMarkupOverviewAsync()
+        public async Task<GetMarkupOverviewResponse> GetMarkupOverviewAsync()
         {
-            throw new NotImplementedException();
+            try
+            {
+                var overview = await _overviewHandler.GetOverview();
+                if (overview != null)
+                {
+                    return new GetMarkupOverviewResponse()
+                    {
+                        Success = true,
+                        Overview = overview
+                    };
+                }
+                var errorMessage = "Overview is empty.";
+                _logger.LogError(errorMessage);
+                return new GetMarkupOverviewResponse()
+                {
+                    Success = false,
+                    ErrorMessage = errorMessage
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, ex.Message);
+                return new GetMarkupOverviewResponse()
+                {
+                    Success = false,
+                    ErrorMessage = ex.Message
+                };
+            }
         }
     }
 }

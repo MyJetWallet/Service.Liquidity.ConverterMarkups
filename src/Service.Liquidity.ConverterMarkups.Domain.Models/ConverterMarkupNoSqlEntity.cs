@@ -8,7 +8,7 @@ namespace Service.Liquidity.ConverterMarkups.Domain.Models
         private static string GeneratePartitionKey(string fromAsset) => fromAsset;
         private static string GenerateRowKey(string toAsset) => toAsset;
 
-        private ConverterMarkup _converterMarkup;
+        public ConverterMarkup ConverterMarkup;
         
         public static ConverterMarkupNoSqlEntity Create(ConverterMarkup entity)
         {
@@ -16,7 +16,7 @@ namespace Service.Liquidity.ConverterMarkups.Domain.Models
             {
                 PartitionKey = GeneratePartitionKey(entity.FromAsset),
                 RowKey = GenerateRowKey(entity.ToAsset),
-                _converterMarkup = entity
+                ConverterMarkup = entity
             };
         }
         

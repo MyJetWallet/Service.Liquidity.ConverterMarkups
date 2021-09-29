@@ -2,7 +2,9 @@
 using Autofac.Core;
 using Autofac.Core.Registration;
 using MyJetWallet.Sdk.NoSql;
+using Service.AssetsDictionary.Client;
 using Service.Liquidity.ConverterMarkups.Domain.Models;
+using Service.Liquidity.ConverterMarkups.Services;
 
 namespace Service.Liquidity.ConverterMarkups.Modules
 {
@@ -14,6 +16,11 @@ namespace Service.Liquidity.ConverterMarkups.Modules
                 ConverterMarkupNoSqlEntity.TableName);
             builder.RegisterMyNoSqlWriter<ConverterMarkupOverviewNoSqlEntity>(Program.ReloadedSettings(e => e.MyNoSqlWriterUrl),
                 ConverterMarkupOverviewNoSqlEntity.TableName);
+            
+            var noSqlClient = builder.CreateNoSqlClient(Program.ReloadedSettings(e => e.MyNoSqlReaderHostPort));
+            builder.RegisterAssetsDictionaryClients(noSqlClient);
+
+            builder.RegisterType<OverviewHandler>().AsSelf().SingleInstance();
         }
     }
 }

@@ -8,7 +8,7 @@ namespace Service.Liquidity.ConverterMarkups.Domain.Models
         private static string GeneratePartitionKey() => "overview";
         private static string GenerateRowKey() => string.Empty;
 
-        private MarkupOverview _markupOverview;
+        public MarkupOverview MarkupOverview;
         
         public static ConverterMarkupOverviewNoSqlEntity Create(MarkupOverview entity)
         {
@@ -16,7 +16,7 @@ namespace Service.Liquidity.ConverterMarkups.Domain.Models
             {
                 PartitionKey = GeneratePartitionKey(),
                 RowKey = GenerateRowKey(),
-                _markupOverview = entity
+                MarkupOverview = entity
             };
         }
         
