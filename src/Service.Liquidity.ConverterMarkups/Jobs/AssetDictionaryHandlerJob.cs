@@ -27,10 +27,7 @@ namespace Service.Liquidity.ConverterMarkups.Jobs
         private void HandleDelete(IReadOnlyList<AssetNoSqlEntity> assets)
         {
             _overviewHandler
-                .UpdateOverview(assets
-                    .Select(e => e.Symbol)
-                    .Distinct()
-                    .ToList())
+                .UpdateOverview()
                 .GetAwaiter()
                 .GetResult();
         }
@@ -38,10 +35,7 @@ namespace Service.Liquidity.ConverterMarkups.Jobs
         private void HandleUpdate(IReadOnlyList<AssetNoSqlEntity> assets)
         {
             _overviewHandler
-                .UpdateOverview(assets
-                    .Select(e => e.Symbol)
-                    .Distinct()
-                    .ToList())
+                .UpdateOverview()
                 .GetAwaiter()
                 .GetResult();
         }

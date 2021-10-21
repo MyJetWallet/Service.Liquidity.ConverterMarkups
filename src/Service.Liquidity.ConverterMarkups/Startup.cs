@@ -22,11 +22,7 @@ namespace Service.Liquidity.ConverterMarkups
     {
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddCodeFirstGrpc(options =>
-            {
-                options.Interceptors.Add<PrometheusMetricsInterceptor>();
-                options.BindMetricsInterceptors();
-            });
+            services.AddCodeFirstGrpc();
 
             services.AddHostedService<ApplicationLifetimeManager>();
 
