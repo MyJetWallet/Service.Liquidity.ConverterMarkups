@@ -22,7 +22,7 @@ namespace Service.Liquidity.ConverterMarkups
     {
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddCodeFirstGrpc();
+            services.BindCodeFirstGrpc();
 
             services.AddHostedService<ApplicationLifetimeManager>();
 
