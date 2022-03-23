@@ -68,11 +68,13 @@ namespace Service.Liquidity.ConverterMarkups.Services
                 foreach (var assetTo in assets)
                 {
                     var markup = GetMarkup(markupSettings, assetFrom, assetTo);
+                    var fee = GetFee(markupSettings, assetFrom, assetTo);
                     overview.Overview.Add(new ConverterMarkup()
                     {
                         FromAsset = assetFrom,
                         ToAsset = assetTo,
-                        Markup = markup
+                        Markup = markup,
+                        Fee = fee
                     });
                 }
             }
@@ -121,6 +123,42 @@ namespace Service.Liquidity.ConverterMarkups.Services
         {
             var markup = converterMarkups.FirstOrDefault(e => e.FromAsset == assetFrom && e.ToAsset == assetTo);
             return markup?.Markup ?? 0m;
+        }
+        
+        private decimal GetFee(IReadOnlyCollection<ConverterMarkup> converterMarkups, string assetFrom, string assetTo)
+        {
+            var directFee = GetFeeByPair(converterMarkups, assetFrom, assetTo);
+            if (directFee != 0m)
+            {
+                return directFee;
+            }
+            var feeFromAssetToAll = GetFeeByPair(converterMarkups, assetFrom, AllSymbol);
+            var feeAllToAssetTo = GetFeeByPair(converterMarkups, AllSymbol, assetTo);
+            if (feeFromAssetToAll != 0m && feeAllToAssetTo != 0m)
+            {
+                return Math.Max(feeFromAssetToAll, feeAllToAssetTo);
+            }
+            if (feeFromAssetToAll != 0m)
+            {
+                return feeFromAssetToAll;
+            }
+            if (feeAllToAssetTo != 0m)
+            {
+                return feeAllToAssetTo;
+            }
+            var feeAllToAll = GetFeeByPair(converterMarkups, AllSymbol, AllSymbol);
+            if (feeAllToAll != 0m)
+            {
+                return feeAllToAll;
+            }
+            _logger.LogError($"Cannot find fee for assetFrom: {assetFrom} and assetTo: {assetTo}");
+            return 0m;
+        }
+
+        private static decimal GetFeeByPair(IEnumerable<ConverterMarkup> converterMarkups, string assetFrom, string assetTo)
+        {
+            var markup = converterMarkups.FirstOrDefault(e => e.FromAsset == assetFrom && e.ToAsset == assetTo);
+            return markup?.Fee ?? 0m;
         }
     }
 }
