@@ -18,5 +18,11 @@ namespace Service.Liquidity.ConverterMarkups.Client
             var overview = _markupReader.Get().FirstOrDefault()?.MarkupOverview.Overview;
             return overview?.FirstOrDefault(e => e.FromAsset == fromAsset && e.ToAsset == toAsset)?.Markup ?? 0m;
         }
+        
+        public decimal GetFee(string fromAsset, string toAsset)
+        {
+            var overview = _markupReader.Get().FirstOrDefault()?.MarkupOverview.Overview;
+            return overview?.FirstOrDefault(e => e.FromAsset == fromAsset && e.ToAsset == toAsset)?.Fee ?? 0m;
+        }
     }
 }
