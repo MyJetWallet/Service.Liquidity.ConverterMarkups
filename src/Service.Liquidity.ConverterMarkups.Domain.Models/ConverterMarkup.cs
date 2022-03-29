@@ -9,5 +9,6 @@ namespace Service.Liquidity.ConverterMarkups.Domain.Models
         [DataMember(Order = 2)] public string ToAsset { get; set; }
         [DataMember(Order = 3)] public decimal Markup { get; set; }
         [DataMember(Order = 4)] public decimal Fee { get; set; }
+        [DataMember(Order = 5)] public decimal MinMarkup { get; set; }
     }
 }

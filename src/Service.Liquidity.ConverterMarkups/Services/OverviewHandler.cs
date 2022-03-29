@@ -67,13 +67,14 @@ namespace Service.Liquidity.ConverterMarkups.Services
             {
                 foreach (var assetTo in assets)
                 {
-                    var (markup, fee) = GetMarkupAndFee(markupSettings, assetFrom, assetTo);
+                    var (markup, minMarkup, fee) = GetMarkupAndFee(markupSettings, assetFrom, assetTo);
                     overview.Overview.Add(new ConverterMarkup()
                     {
                         FromAsset = assetFrom,
                         ToAsset = assetTo,
                         Markup = markup,
-                        Fee = fee
+                        Fee = fee,
+                        MinMarkup = minMarkup
                     });
                 }
             }
@@ -88,7 +89,7 @@ namespace Service.Liquidity.ConverterMarkups.Services
             }
         }
 
-        private (decimal,decimal) GetMarkupAndFee(IReadOnlyCollection<ConverterMarkup> converterMarkups, string assetFrom, string assetTo)
+        private (decimal markup, decimal minMarkup, decimal fee) GetMarkupAndFee(IReadOnlyCollection<ConverterMarkup> converterMarkups, string assetFrom, string assetTo)
         {
             var direct = GetMarkUpAndFeeByPair(converterMarkups, assetFrom, assetTo);
             if (direct.markup != 0m)
@@ -115,13 +116,13 @@ namespace Service.Liquidity.ConverterMarkups.Services
                 return allToAll;
             }
             _logger.LogError($"Cannot find markup for assetFrom: {assetFrom} and assetTo: {assetTo}");
-            return (0m, 0m);
+            return (0m, 0m, 0m);
         }
 
-        private static (decimal markup, decimal fee) GetMarkUpAndFeeByPair(IEnumerable<ConverterMarkup> converterMarkups, string assetFrom, string assetTo)
+        private static (decimal markup, decimal minMarkup, decimal fee) GetMarkUpAndFeeByPair(IEnumerable<ConverterMarkup> converterMarkups, string assetFrom, string assetTo)
         {
             var markup = converterMarkups.FirstOrDefault(e => e.FromAsset == assetFrom && e.ToAsset == assetTo);
-            return (markup?.Markup ?? 0m, markup?.Fee ?? 0m);
+            return (markup?.Markup ?? 0m, markup?.MinMarkup ?? 0m, markup?.Fee ?? 0m);
         }
     }
 }
