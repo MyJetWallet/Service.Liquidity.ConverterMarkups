@@ -92,37 +92,37 @@ namespace Service.Liquidity.ConverterMarkups.Services
         private (decimal markup, decimal minMarkup, decimal fee) GetMarkupAndFee(IReadOnlyCollection<ConverterMarkup> converterMarkups, string assetFrom, string assetTo)
         {
             var direct = GetMarkUpAndFeeByPair(converterMarkups, assetFrom, assetTo);
-            if (direct.markup != 0m)
+            if (direct.found)
             {
-                return direct;
+                return direct.settings;
             }
             var fromAssetToAll = GetMarkUpAndFeeByPair(converterMarkups, assetFrom, AllSymbol);
             var allToAssetTo = GetMarkUpAndFeeByPair(converterMarkups, AllSymbol, assetTo);
-            if (fromAssetToAll.markup != 0m && allToAssetTo.markup != 0m)
+            if (fromAssetToAll.found && allToAssetTo.found)
             {
-                return fromAssetToAll.markup > allToAssetTo.markup ? fromAssetToAll : allToAssetTo;
+                return fromAssetToAll.settings.markup > allToAssetTo.settings.markup ? fromAssetToAll.settings : allToAssetTo.settings;
             }
-            if (fromAssetToAll.markup != 0m)
+            if (fromAssetToAll.found)
             {
-                return fromAssetToAll;
+                return fromAssetToAll.settings;
             }
-            if (allToAssetTo.markup != 0m)
+            if (allToAssetTo.found)
             {
-                return allToAssetTo;
+                return allToAssetTo.settings;
             }
             var allToAll = GetMarkUpAndFeeByPair(converterMarkups, AllSymbol, AllSymbol);
-            if (allToAll.markup != 0m)
+            if (allToAll.found)
             {
-                return allToAll;
+                return allToAll.settings;
             }
             _logger.LogError($"Cannot find markup for assetFrom: {assetFrom} and assetTo: {assetTo}");
             return (0m, 0m, 0m);
         }
 
-        private static (decimal markup, decimal minMarkup, decimal fee) GetMarkUpAndFeeByPair(IEnumerable<ConverterMarkup> converterMarkups, string assetFrom, string assetTo)
+        private static (bool found, (decimal markup, decimal minMarkup, decimal fee) settings) GetMarkUpAndFeeByPair(IEnumerable<ConverterMarkup> converterMarkups, string assetFrom, string assetTo)
         {
             var markup = converterMarkups.FirstOrDefault(e => e.FromAsset == assetFrom && e.ToAsset == assetTo);
-            return (markup?.Markup ?? 0m, markup?.MinMarkup ?? 0m, markup?.Fee ?? 0m);
+            return (markup != null,(markup?.Markup ?? 0m, markup?.MinMarkup ?? 0m, markup?.Fee ?? 0m));
         }
     }
 }
