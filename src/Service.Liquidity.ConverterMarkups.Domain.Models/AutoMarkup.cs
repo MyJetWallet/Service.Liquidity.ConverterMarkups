@@ -12,9 +12,8 @@ namespace Service.Liquidity.ConverterMarkups.Domain.Models
         [DataMember(Order = 4)] public decimal Delay { get; set; }
         [DataMember(Order = 5)] public DateTime StartTime { get; set; }
         [DataMember(Order = 6)] public DateTime StopTime { get; set; }
-        [DataMember(Order = 7)] public decimal DelayMarkup { get; set; }
-        [DataMember(Order = 8)] public decimal PrevMarkup { get; set; }
-        [DataMember(Order = 9)] public string User { get; set; }
-        [DataMember(Order = 10)] public bool IsActive { get; set; }
+        [DataMember(Order = 7)] public decimal PrevMarkup { get; set; }
+        [DataMember(Order = 8)] public string User { get; set; }
+        [DataMember(Order = 9)] public bool IsActive { get; set; }
     }
 }
