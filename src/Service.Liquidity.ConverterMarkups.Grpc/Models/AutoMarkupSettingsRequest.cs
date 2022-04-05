@@ -7,6 +7,6 @@ namespace Service.Liquidity.ConverterMarkups.Grpc.Models
     [DataContract]
     public class AutoMarkupSettingsRequest
     {
-        [DataMember(Order = 1)] public AutoMarkup Markup { get; set; }
+        [DataMember(Order = 1)] public AutoMarkupSettings Markup { get; set; }
     }
 }

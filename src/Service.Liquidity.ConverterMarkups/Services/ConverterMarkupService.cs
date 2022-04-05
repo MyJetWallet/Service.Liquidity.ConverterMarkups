@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using MyNoSqlServer.Abstractions;
@@ -14,15 +15,21 @@ namespace Service.Liquidity.ConverterMarkups.Services
     {
         private readonly ILogger<ConverterMarkupService> _logger;
         private readonly IMyNoSqlServerDataWriter<ConverterMarkupNoSqlEntity> _markupWriter;
+        private readonly IMyNoSqlServerDataWriter<AutoMarkupNoSqlEntity> _autoMarkupWriter;
+        private readonly IMyNoSqlServerDataReader<AutoMarkupNoSqlEntity> _autoMarkupReader;
         private readonly OverviewHandler _overviewHandler;
 
         public ConverterMarkupService(ILogger<ConverterMarkupService> logger, 
             IMyNoSqlServerDataWriter<ConverterMarkupNoSqlEntity> markupWriter, 
-            OverviewHandler overviewHandler)
+            OverviewHandler overviewHandler, 
+            IMyNoSqlServerDataReader<AutoMarkupNoSqlEntity> autoMarkupReader, 
+            IMyNoSqlServerDataWriter<AutoMarkupNoSqlEntity> autoMarkupWriter)
         {
             _logger = logger;
             _markupWriter = markupWriter;
             _overviewHandler = overviewHandler;
+            _autoMarkupReader = autoMarkupReader;
+            _autoMarkupWriter = autoMarkupWriter;
         }
 
         public async Task<GetMarkupSettingsResponse> GetMarkupSettingsAsync()
@@ -108,7 +115,7 @@ namespace Service.Liquidity.ConverterMarkups.Services
                         Overview = overview
                     };
                 }
-                var errorMessage = "AutoMarkupItems is empty.";
+                var errorMessage = "ConverterMarkupItems is empty.";
                 _logger.LogError(errorMessage);
                 return new GetMarkupOverviewResponse()
                 {
@@ -129,6 +136,26 @@ namespace Service.Liquidity.ConverterMarkups.Services
 
         public async Task<AutoMarkupSettingsResponse> ActivateAutoMarkupSettingsAsync(AutoMarkupSettingsRequest request)
         {
+            if (request != null)
+            {
+                var newMarkup = request.Markup.PrevMarkup + request.Markup.PrevMarkup * request.Markup.Percent;
+                await _autoMarkupWriter.InsertAsync(AutoMarkupNoSqlEntity.Create(new AutoMarkup
+                {
+                    FromAsset = request.Markup.FromAsset,
+                    ToAsset = request.Markup.ToAsset,
+                    Percent = request.Markup.Percent,
+                    Delay = request.Markup.Delay,
+                    Markup = newMarkup,
+                    StartTime = default,
+                    StopTime = default,
+                    PrevMarkup = request.Markup.PrevMarkup,
+                    User = request.Markup.UserId,
+                    State = State.None,
+                    Fee = request.Markup.Fee,
+                    MinMarkup = request.Markup.MinMarkup
+                }));
+            }
+
             return new AutoMarkupSettingsResponse
             {
                 Success = false,
@@ -136,14 +163,37 @@ namespace Service.Liquidity.ConverterMarkups.Services
             };
         }
 
+
         public async Task<GetAutoMarkupsResponse> GetAutoMarkupsAsync()
         {
-            return new GetAutoMarkupsResponse
+            try
             {
-                Success = false,
-                ErrorMessage = "Not Implemented",
-                AutoMarkupItems = new List<AutoMarkup>()
-            };
+                var entities = _autoMarkupReader.Get();
+                if (entities != null)
+                {
+                    return new GetAutoMarkupsResponse()
+                    {
+                        Success = true,
+                        AutoMarkupItems = entities.Select(e => e.AutoMarkup).ToList()
+                    };
+                }
+                var errorMessage = "AutoMarkupItems is empty.";
+                _logger.LogError(errorMessage);
+                return new GetAutoMarkupsResponse()
+                {
+                    Success = false,
+                    ErrorMessage = errorMessage
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, ex.Message);
+                return new GetAutoMarkupsResponse()
+                {
+                    Success = false,
+                    ErrorMessage = ex.Message
+                };
+            }
         }
     }
 }
