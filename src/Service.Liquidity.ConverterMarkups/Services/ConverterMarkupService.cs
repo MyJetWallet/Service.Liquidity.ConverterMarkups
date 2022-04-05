@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -107,7 +108,7 @@ namespace Service.Liquidity.ConverterMarkups.Services
                         Overview = overview
                     };
                 }
-                var errorMessage = "Overview is empty.";
+                var errorMessage = "AutoMarkupItems is empty.";
                 _logger.LogError(errorMessage);
                 return new GetMarkupOverviewResponse()
                 {
@@ -124,6 +125,25 @@ namespace Service.Liquidity.ConverterMarkups.Services
                     ErrorMessage = ex.Message
                 };
             }
+        }
+
+        public async Task<AutoMarkupSettingsResponse> ActivateAutoMarkupSettingsAsync(AutoMarkupSettingsRequest request)
+        {
+            return new AutoMarkupSettingsResponse
+            {
+                Success = false,
+                ErrorMessage = "Not Implemented",
+            };
+        }
+
+        public async Task<GetAutoMarkupsResponse> GetAutoMarkupsAsync()
+        {
+            return new GetAutoMarkupsResponse
+            {
+                Success = false,
+                ErrorMessage = "Not Implemented",
+                AutoMarkupItems = new List<AutoMarkup>()
+            };
         }
     }
 }

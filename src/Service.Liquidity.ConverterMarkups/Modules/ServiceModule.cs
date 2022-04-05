@@ -1,4 +1,5 @@
-﻿using Autofac;
+﻿using System;
+using Autofac;
 using MyJetWallet.Sdk.NoSql;
 using Service.AssetsDictionary.MyNoSql;
 using Service.Liquidity.ConverterMarkups.Domain.Models;
@@ -21,6 +22,8 @@ namespace Service.Liquidity.ConverterMarkups.Modules
             
             builder.RegisterType<OverviewHandler>().AsSelf().SingleInstance();
             builder.RegisterType<AssetDictionaryHandlerJob>().As<IStartable>().AutoActivate().SingleInstance();
+            //builder.RegisterType<AutoMarkupBackgroundJob>().As<IStartable>().As<IDisposable>().AutoActivate().SingleInstance();
+            builder.RegisterType<AutoMarkupBackgroundJob>().SingleInstance().AutoActivate().AsSelf();
         }
     }
 }
