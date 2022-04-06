@@ -1,4 +1,5 @@
-﻿using Autofac;
+﻿using System;
+using Autofac;
 using MyNoSqlServer.DataReader;
 using Service.Liquidity.ConverterMarkups.Domain.Models;
 using Service.Liquidity.ConverterMarkups.Grpc;
@@ -9,6 +10,14 @@ namespace Service.Liquidity.ConverterMarkups.Client
 {
     public static class AutofacHelper
     {
+        [Obsolete("This property is obsolete. Use RegisterConverterMarkupClient instead.", false)]
+        public static void ConverterMarkupsClient(this ContainerBuilder builder, string grpcServiceUrl)
+        {
+            var factory = new ConverterMarkupsClientFactory(grpcServiceUrl);
+
+            builder.RegisterInstance(factory.GetConverterMarkupService()).As<IConverterMarkupService>().SingleInstance();
+        }
+
         public static void RegisterConverterMarkupClient(this ContainerBuilder builder, string grpcServiceUrl)
         {
             var factory = new ConverterMarkupsClientFactory(grpcServiceUrl);
