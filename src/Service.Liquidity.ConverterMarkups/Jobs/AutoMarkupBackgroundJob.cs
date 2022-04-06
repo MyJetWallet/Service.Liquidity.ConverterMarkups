@@ -64,7 +64,6 @@ namespace Service.Liquidity.ConverterMarkups.Jobs
                         {
                             await SetUpPrevMarkup(item);
                         }
-
                         break;
 
                     case State.Done:
@@ -122,7 +121,9 @@ namespace Service.Liquidity.ConverterMarkups.Jobs
             }
 
             await _autoMarkupWriter.InsertOrReplaceAsync(update);
-            _logger.LogInformation($"Setup new markup task successfully {update.AutoMarkup.ToJson()}");
+            var prev = update.AutoMarkup.PrevMarkup;
+            var curr = update.AutoMarkup.Markup;
+            _logger.LogInformation($"Setup new markup {prev}->{curr} task successfully {update.AutoMarkup.ToJson()}");
             return true;
         }
 
@@ -151,9 +152,13 @@ namespace Service.Liquidity.ConverterMarkups.Jobs
 
             var update = AutoMarkupNoSqlEntity.Create(item);
             update.AutoMarkup.State = State.Done;
+            var prev = update.AutoMarkup.PrevMarkup;
+            var curr = update.AutoMarkup.Markup;
+            //update.AutoMarkup.Markup = prev;
+            //update.AutoMarkup.PrevMarkup = curr;
             await _autoMarkupWriter.InsertOrReplaceAsync(update);
 
-            _logger.LogInformation($"Setup prev markup task successfully {item.ToJson()}");
+            _logger.LogInformation($"Setup prev markup {curr}->{prev} task successfully {item.ToJson()}");
             return true;
         }
 
