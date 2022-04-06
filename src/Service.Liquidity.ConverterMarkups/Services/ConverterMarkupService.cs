@@ -138,6 +138,9 @@ namespace Service.Liquidity.ConverterMarkups.Services
         {
             if (request != null)
             {
+                var startTime = DateTime.UtcNow;
+                var stopTime = startTime.AddMinutes(Decimal.ToDouble(request.Markup.Delay));
+
                 var newMarkup = request.Markup.PrevMarkup + request.Markup.PrevMarkup * request.Markup.Percent;
                 await _autoMarkupWriter.InsertAsync(AutoMarkupNoSqlEntity.Create(new AutoMarkup
                 {
@@ -146,8 +149,8 @@ namespace Service.Liquidity.ConverterMarkups.Services
                     Percent = request.Markup.Percent,
                     Delay = request.Markup.Delay,
                     Markup = newMarkup,
-                    StartTime = default,
-                    StopTime = default,
+                    StartTime = startTime,
+                    StopTime = stopTime,
                     PrevMarkup = request.Markup.PrevMarkup,
                     User = request.Markup.UserId,
                     State = State.None,

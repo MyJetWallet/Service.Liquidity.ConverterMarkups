@@ -78,7 +78,7 @@ namespace Service.Liquidity.ConverterMarkups.Jobs
         private async Task RemoveNewMarkup(AutoMarkup item)
         {
             var currTime = DateTime.UtcNow;
-            if ((item.StopTime >= currTime && item.State == State.Done))
+            if ((item.StopTime <= currTime && item.State == State.Done))
             {
                 await _autoMarkupWriter.DeleteAsync(item.FromAsset, item.ToAsset);
                 _logger.LogInformation($"Remove new markup task successfully {item.ToJson()}");
@@ -86,17 +86,18 @@ namespace Service.Liquidity.ConverterMarkups.Jobs
             }
         }
 
+
         private bool IsNeedToSetPrevValue(AutoMarkup item)
         {
             var currTime = DateTime.UtcNow;
-            return (item.StopTime >= currTime && item.State == State.InProgress);
+            return (item.StopTime <= currTime && item.State == State.InProgress);
         }
 
         private async Task<bool> SetUpNewMarkup(AutoMarkup item)
         {
             var update = AutoMarkupNoSqlEntity.Create(item);
-            update.AutoMarkup.StartTime = DateTime.UtcNow;
-            update.AutoMarkup.StopTime = item.StartTime.AddMinutes(Decimal.ToDouble(update.AutoMarkup.Delay));
+            //update.AutoMarkup.StartTime = DateTime.UtcNow;
+            //update.AutoMarkup.StopTime = item.StartTime.AddMinutes(Decimal.ToDouble(update.AutoMarkup.Delay));
             update.AutoMarkup.State = State.InProgress;
 
             var result = await _markupService.UpsertMarkupSettingsAsync(new UpsertMarkupSettingsRequest
