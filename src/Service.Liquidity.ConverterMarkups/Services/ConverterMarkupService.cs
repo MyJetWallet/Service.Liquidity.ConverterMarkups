@@ -16,6 +16,7 @@ namespace Service.Liquidity.ConverterMarkups.Services
         private readonly ILogger<ConverterMarkupService> _logger;
         private readonly IMyNoSqlServerDataWriter<ConverterMarkupNoSqlEntity> _markupWriter;
         private readonly IMyNoSqlServerDataWriter<AutoMarkupSettingsNoSqlEntity> _autoMarkupSettingWriter;
+        private readonly IMyNoSqlServerDataReader<AutoMarkupSettingsNoSqlEntity> _autoMarkupSettingReader;
         private readonly IMyNoSqlServerDataWriter<AutoMarkupNoSqlEntity> _autoMarkupWriter;
         private readonly IMyNoSqlServerDataReader<AutoMarkupNoSqlEntity> _autoMarkupReader;
         private readonly OverviewHandler _overviewHandler;
@@ -25,7 +26,8 @@ namespace Service.Liquidity.ConverterMarkups.Services
             OverviewHandler overviewHandler, 
             IMyNoSqlServerDataReader<AutoMarkupNoSqlEntity> autoMarkupReader, 
             IMyNoSqlServerDataWriter<AutoMarkupNoSqlEntity> autoMarkupWriter, 
-            IMyNoSqlServerDataWriter<AutoMarkupSettingsNoSqlEntity> autoMarkupSettingWriter)
+            IMyNoSqlServerDataWriter<AutoMarkupSettingsNoSqlEntity> autoMarkupSettingWriter, 
+            IMyNoSqlServerDataReader<AutoMarkupSettingsNoSqlEntity> autoMarkupSettingReader)
         {
             _logger = logger;
             _markupWriter = markupWriter;
@@ -33,6 +35,7 @@ namespace Service.Liquidity.ConverterMarkups.Services
             _autoMarkupReader = autoMarkupReader;
             _autoMarkupWriter = autoMarkupWriter;
             _autoMarkupSettingWriter = autoMarkupSettingWriter;
+            _autoMarkupSettingReader = autoMarkupSettingReader;
         }
 
         public async Task<GetMarkupSettingsResponse> GetMarkupSettingsAsync()
@@ -146,7 +149,7 @@ namespace Service.Liquidity.ConverterMarkups.Services
                     var startTime = DateTime.UtcNow;
                     var stopTime = startTime.AddMinutes(Decimal.ToDouble(request.Markup.Delay));
 
-                    var newMarkup = request.Markup.PrevMarkup + request.Markup.PrevMarkup * request.Markup.Percent;
+                    var newMarkup = request.Markup.PrevMarkup + request.Markup.PrevMarkup * request.Markup.Percent/100;
                     await _autoMarkupWriter.InsertAsync(AutoMarkupNoSqlEntity.Create(new AutoMarkup
                     {
                         FromAsset = request.Markup.FromAsset,
@@ -185,7 +188,7 @@ namespace Service.Liquidity.ConverterMarkups.Services
         {
             try
             {
-                var entities = _autoMarkupReader.Get();
+                var entities = _autoMarkupSettingReader.Get();
                 if (entities != null)
                 {
                     return new GetAutoMarkupsResponse()

@@ -25,6 +25,7 @@ namespace Service.Liquidity.ConverterMarkups.Modules
             var noSqlClient = builder.CreateNoSqlClient(Program.ReloadedSettings(e => e.MyNoSqlReaderHostPort));
             builder.RegisterMyNoSqlReader<AssetNoSqlEntity>(noSqlClient, AssetNoSqlEntity.TableName);
             builder.RegisterMyNoSqlReader<AutoMarkupNoSqlEntity>(noSqlClient, AutoMarkupNoSqlEntity.TableName);
+            builder.RegisterMyNoSqlReader<AutoMarkupSettingsNoSqlEntity>(noSqlClient, AutoMarkupNoSqlEntity.TableName);
 
             builder.RegisterType<ConverterMarkupService>().As<IConverterMarkupService>();
             builder.RegisterType<OverviewHandler>().AsSelf().SingleInstance();
