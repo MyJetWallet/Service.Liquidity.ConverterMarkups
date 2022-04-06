@@ -47,6 +47,7 @@ namespace Service.Liquidity.ConverterMarkups
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapGrpcSchema<ConverterMarkupService, IConverterMarkupService>();
+                endpoints.MapGrpcSchema<AutoMarkupService, IAutoMarkupService>();
 
                 endpoints.MapGrpcSchemaRegistry();
 

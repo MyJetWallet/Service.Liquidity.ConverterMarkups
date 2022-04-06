@@ -9,11 +9,20 @@ namespace Service.Liquidity.ConverterMarkups.Client
 {
     public static class AutofacHelper
     {
-        public static void ConverterMarkupsClient(this ContainerBuilder builder, string grpcServiceUrl)
+        public static void RegisterConverterMarkupClient(this ContainerBuilder builder, string grpcServiceUrl)
         {
             var factory = new ConverterMarkupsClientFactory(grpcServiceUrl);
 
-            builder.RegisterInstance(factory.GetHelloService()).As<IConverterMarkupService>().SingleInstance();
+            builder.RegisterInstance(factory.GetConverterMarkupService())
+                .As<IConverterMarkupService>().SingleInstance();
+        }
+
+        public static void RegisterAutoMarkupClient(this ContainerBuilder builder, string grpcServiceUrl)
+        {
+            var factory = new AutoMarkupsClientFactory(grpcServiceUrl);
+
+            builder.RegisterInstance(factory.GetAutoMarkupService())
+                .As<IAutoMarkupService>().SingleInstance();
         }
 
         public static void RegisterMarkupExtractor(this ContainerBuilder builder, IMyNoSqlSubscriber myNoSqlSubscriber)
@@ -23,8 +32,7 @@ namespace Service.Liquidity.ConverterMarkups.Client
             
             builder
                 .RegisterInstance(new MarkupExtractor(priceSubscriber))
-                .As<IMarkupExtractor>()
-                .SingleInstance();
+                .As<IMarkupExtractor>().SingleInstance();
         }
     }
 }

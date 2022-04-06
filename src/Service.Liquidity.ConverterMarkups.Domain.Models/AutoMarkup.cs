@@ -19,11 +19,4 @@ namespace Service.Liquidity.ConverterMarkups.Domain.Models
         [DataMember(Order = 11)] public decimal Fee { get; set; }
         [DataMember(Order = 12)] public decimal MinMarkup { get; set; }
     }
-
-    public enum State
-    {
-        None,
-        InProgress,
-        Done
-    }
 }

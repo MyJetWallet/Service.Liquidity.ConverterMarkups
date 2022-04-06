@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Autofac;
 using Microsoft.Extensions.Logging;
-using MyJetWallet.Domain;
 using MyJetWallet.Sdk.Service;
 using MyJetWallet.Sdk.Service.Tools;
 using MyNoSqlServer.Abstractions;
@@ -95,8 +94,6 @@ namespace Service.Liquidity.ConverterMarkups.Jobs
         private async Task<bool> SetUpNewMarkup(AutoMarkup item)
         {
             var update = AutoMarkupNoSqlEntity.Create(item);
-            //update.AutoMarkup.StartTime = DateTime.UtcNow;
-            //update.AutoMarkup.StopTime = item.StartTime.AddMinutes(Decimal.ToDouble(update.AutoMarkup.Delay));
             update.AutoMarkup.State = State.InProgress;
 
             var result = await _markupService.UpsertMarkupSettingsAsync(new UpsertMarkupSettingsRequest
@@ -154,8 +151,6 @@ namespace Service.Liquidity.ConverterMarkups.Jobs
             update.AutoMarkup.State = State.Done;
             var prev = update.AutoMarkup.PrevMarkup;
             var curr = update.AutoMarkup.Markup;
-            //update.AutoMarkup.Markup = prev;
-            //update.AutoMarkup.PrevMarkup = curr;
             await _autoMarkupWriter.InsertOrReplaceAsync(update);
 
             _logger.LogInformation($"Setup prev markup {curr}->{prev} task successfully {item.ToJson()}");
