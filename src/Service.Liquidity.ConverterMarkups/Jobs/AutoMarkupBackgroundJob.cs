@@ -84,7 +84,6 @@ namespace Service.Liquidity.ConverterMarkups.Jobs
             }
         }
 
-
         private bool IsNeedToSetPrevValue(AutoMarkup item)
         {
             var currTime = DateTime.UtcNow;
@@ -95,20 +94,30 @@ namespace Service.Liquidity.ConverterMarkups.Jobs
         {
             var update = AutoMarkupNoSqlEntity.Create(item);
             update.AutoMarkup.State = State.InProgress;
-
+            //--- For overview
+            var allMarkupsResponse = await _markupService.GetMarkupSettingsAsync();
+            var allMarkups = allMarkupsResponse?.MarkupSettings ?? new List<ConverterMarkup>();
+            var newMarkups = new List<ConverterMarkup>();
+            foreach (var markup in allMarkups)
+            {
+                var newValue = markup.Markup;
+                if (markup.FromAsset == item.FromAsset && markup.ToAsset == item.ToAsset)
+                {
+                    newValue = item.Markup;
+                }
+                newMarkups.Add(new ConverterMarkup
+                {
+                    FromAsset = markup.FromAsset,
+                    ToAsset = markup.ToAsset,
+                    Markup = newValue,
+                    Fee = markup.Fee,
+                    MinMarkup = markup.MinMarkup
+                });
+            }
+            //--- For overview
             var result = await _markupService.UpsertMarkupSettingsAsync(new UpsertMarkupSettingsRequest
             {
-                MarkupSettings = new List<ConverterMarkup>()
-                {
-                    new ConverterMarkup
-                    {
-                        FromAsset = update.AutoMarkup.FromAsset,
-                        ToAsset = update.AutoMarkup.ToAsset,
-                        Markup = update.AutoMarkup.Markup,
-                        Fee = update.AutoMarkup.Fee,
-                        MinMarkup = update.AutoMarkup.MinMarkup
-                    }
-                }
+                MarkupSettings = newMarkups
             });
 
             if (result == null || !result.Success)

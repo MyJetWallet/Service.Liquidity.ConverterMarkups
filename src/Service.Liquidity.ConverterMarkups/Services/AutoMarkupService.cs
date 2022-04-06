@@ -82,6 +82,15 @@ namespace Service.Liquidity.ConverterMarkups.Services
             {
                 if (request != null)
                 {
+                    if (request.Markup.Delay == 0m)
+                    {
+                        return new AutoMarkupSettingsResponse
+                        {
+                            Success = false,
+                            ErrorMessage = "Delay should be more then zero",
+                        };
+                    }
+
                     var startTime = DateTime.UtcNow;
                     var stopTime = startTime.AddMinutes(Decimal.ToDouble(request.Markup.Delay));
 
