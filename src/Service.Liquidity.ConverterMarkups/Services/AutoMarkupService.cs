@@ -91,6 +91,20 @@ namespace Service.Liquidity.ConverterMarkups.Services
                         };
                     }
 
+                    await _autoMarkupSettingWriter
+                        .InsertOrReplaceAsync(AutoMarkupSettingsNoSqlEntity.Create(new AutoMarkupSettings
+                        {
+                            FromAsset = request.Markup.FromAsset,
+                            ToAsset = request.Markup.ToAsset,
+                            Percent = request.Markup.Percent,
+                            Delay = request.Markup.Delay,
+                            UserId = request.Markup.UserId,
+                            PrevMarkup = request.Markup.PrevMarkup,
+                            Fee = request.Markup.Fee,
+                            MinMarkup = request.Markup.MinMarkup    
+                        }));
+
+                    //Add to status table
                     var startTime = DateTime.UtcNow;
                     var stopTime = startTime.AddMinutes(Decimal.ToDouble(request.Markup.Delay));
 
