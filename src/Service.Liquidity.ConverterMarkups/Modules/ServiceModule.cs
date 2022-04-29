@@ -13,6 +13,12 @@ namespace Service.Liquidity.ConverterMarkups.Modules
     {
         protected override void Load(ContainerBuilder builder)
         {
+            var noSqlClient = builder.CreateNoSqlClient(Program.ReloadedSettings(e => e.MyNoSqlReaderHostPort));
+            builder.RegisterMyNoSqlReader<AssetNoSqlEntity>(noSqlClient, AssetNoSqlEntity.TableName);
+            builder.RegisterMyNoSqlReader<AutoMarkupNoSqlEntity>(noSqlClient, AutoMarkupNoSqlEntity.TableName);
+            builder.RegisterMyNoSqlReader<AutoMarkupSettingsNoSqlEntity>(noSqlClient, AutoMarkupSettingsNoSqlEntity.TableName);
+            builder.RegisterMyNoSqlReader<ConverterMarkupNoSqlEntity>(noSqlClient, ConverterMarkupNoSqlEntity.TableName);
+
             builder.RegisterMyNoSqlWriter<ConverterMarkupNoSqlEntity>(Program.ReloadedSettings(e => e.MyNoSqlWriterUrl),
                 ConverterMarkupNoSqlEntity.TableName);
             builder.RegisterMyNoSqlWriter<ConverterMarkupOverviewNoSqlEntity>(Program.ReloadedSettings(e => e.MyNoSqlWriterUrl),
@@ -22,15 +28,10 @@ namespace Service.Liquidity.ConverterMarkups.Modules
             builder.RegisterMyNoSqlWriter<AutoMarkupSettingsNoSqlEntity>(Program.ReloadedSettings(e => e.MyNoSqlWriterUrl),
                 AutoMarkupSettingsNoSqlEntity.TableName);
 
-            var noSqlClient = builder.CreateNoSqlClient(Program.ReloadedSettings(e => e.MyNoSqlReaderHostPort));
-            builder.RegisterMyNoSqlReader<AssetNoSqlEntity>(noSqlClient, AssetNoSqlEntity.TableName);
-            builder.RegisterMyNoSqlReader<AutoMarkupNoSqlEntity>(noSqlClient, AutoMarkupNoSqlEntity.TableName);
-            builder.RegisterMyNoSqlReader<AutoMarkupSettingsNoSqlEntity>(noSqlClient, AutoMarkupSettingsNoSqlEntity.TableName);
-
-            builder.RegisterType<ConverterMarkupService>().As<IConverterMarkupService>();
-            builder.RegisterType<OverviewHandler>().AsSelf().SingleInstance();
             builder.RegisterType<AssetDictionaryHandlerJob>().As<IStartable>().AutoActivate().SingleInstance();
             builder.RegisterType<AutoMarkupBackgroundJob>().As<IStartable>().As<IDisposable>().AutoActivate().SingleInstance();
+            builder.RegisterType<ConverterMarkupService>().As<IConverterMarkupService>();
+            builder.RegisterType<OverviewHandler>().AsSelf().SingleInstance();
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Autofac;
 using Microsoft.Extensions.Logging;
@@ -19,14 +20,12 @@ namespace Service.Liquidity.ConverterMarkups.Jobs
         private readonly IConverterMarkupService _markupService;
         private readonly IMyNoSqlServerDataWriter<AutoMarkupNoSqlEntity> _autoMarkupWriter;
         private readonly IMyNoSqlServerDataReader<AutoMarkupNoSqlEntity> _autoMarkupReader;
-
-        private const int TimerSpanSec = 30;
+        private const int TimerSpanSec = 1;
 
         public AutoMarkupBackgroundJob(ILogger<AutoMarkupBackgroundJob> logger,
             IConverterMarkupService markupService,
             IMyNoSqlServerDataWriter<AutoMarkupNoSqlEntity> autoMarkupWriter,
-            IMyNoSqlServerDataReader<AutoMarkupNoSqlEntity> autoMarkupReader
-            )
+            IMyNoSqlServerDataReader<AutoMarkupNoSqlEntity> autoMarkupReader)
         {
             _logger = logger;
             _markupService = markupService;
@@ -135,9 +134,10 @@ namespace Service.Liquidity.ConverterMarkups.Jobs
 
         private async Task<bool> SetUpPrevMarkup(AutoMarkup item)
         {
-            var result = await _markupService.UpsertMarkupSettingsAsync(new UpsertMarkupSettingsRequest
+            var result = await _markupService
+                .UpsertMarkupSettingsAsync(new UpsertMarkupSettingsRequest
             {
-                MarkupSettings = new List<ConverterMarkup>()
+                    MarkupSettings = new List<ConverterMarkup>()
                 {
                     new ConverterMarkup
                     {
@@ -148,7 +148,7 @@ namespace Service.Liquidity.ConverterMarkups.Jobs
                         MinMarkup = item.MinMarkup
                     }
                 }
-            });
+                });
 
             if (result == null || !result.Success)
             {

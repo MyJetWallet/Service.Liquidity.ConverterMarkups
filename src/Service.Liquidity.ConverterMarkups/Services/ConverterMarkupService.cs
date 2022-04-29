@@ -15,22 +15,26 @@ namespace Service.Liquidity.ConverterMarkups.Services
     {
         private readonly ILogger<ConverterMarkupService> _logger;
         private readonly IMyNoSqlServerDataWriter<ConverterMarkupNoSqlEntity> _markupWriter;
+        private readonly IMyNoSqlServerDataReader<ConverterMarkupNoSqlEntity> _markupReader;
+
         private readonly OverviewHandler _overviewHandler;
 
         public ConverterMarkupService(ILogger<ConverterMarkupService> logger, 
             IMyNoSqlServerDataWriter<ConverterMarkupNoSqlEntity> markupWriter, 
-            OverviewHandler overviewHandler)
+            OverviewHandler overviewHandler, 
+            IMyNoSqlServerDataReader<ConverterMarkupNoSqlEntity> markupReader)
         {
             _logger = logger;
             _markupWriter = markupWriter;
             _overviewHandler = overviewHandler;
+            _markupReader = markupReader;
         }
 
         public async Task<GetMarkupSettingsResponse> GetMarkupSettingsAsync()
         {
             try
             {
-                var markups = await _markupWriter.GetAsync();
+                var markups = _markupReader.Get();
                 return new GetMarkupSettingsResponse()
                 {
                     Success = true,
@@ -48,14 +52,20 @@ namespace Service.Liquidity.ConverterMarkups.Services
             }
         }
 
-        public async Task<UpsertMarkupSettingsResponse> UpsertMarkupSettingsAsync(UpsertMarkupSettingsRequest request)
+        public async Task<UpsertMarkupSettingsResponse> UpsertMarkupSettingsAsync
+            (UpsertMarkupSettingsRequest request)
         {
             try
             {
-                var noSqlEntities = request.MarkupSettings.Select(ConverterMarkupNoSqlEntity.Create);
+                var noSqlEntities = request
+                    .MarkupSettings.Select(ConverterMarkupNoSqlEntity.Create);
                 await _markupWriter.BulkInsertOrReplaceAsync(noSqlEntities);
 
-                await _overviewHandler.UpdateOverview(request.MarkupSettings);
+                var markupSettings = await _markupWriter.GetAsync();
+
+                await _overviewHandler
+                    .UpdateOverview(markupSettings.Select(e => e.ConverterMarkup)
+                        .ToList());
                 
                 return new UpsertMarkupSettingsResponse()
                 {
