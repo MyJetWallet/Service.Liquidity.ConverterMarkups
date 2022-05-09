@@ -13,5 +13,6 @@ namespace Service.Liquidity.ConverterMarkups.Domain.Models
         [DataMember(Order = 6)] public decimal PrevMarkup { get; set; }
         [DataMember(Order = 7)] public decimal Fee { get; set; }
         [DataMember(Order = 8)] public decimal MinMarkup { get; set; }
+        [DataMember(Order = 9)] public string ProfileId { get; set; }
     }
 }

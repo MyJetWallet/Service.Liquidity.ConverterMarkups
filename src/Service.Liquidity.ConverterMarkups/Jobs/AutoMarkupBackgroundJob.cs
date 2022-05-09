@@ -100,7 +100,7 @@ namespace Service.Liquidity.ConverterMarkups.Jobs
             foreach (var markup in allMarkups)
             {
                 var newValue = markup.Markup;
-                if (markup.FromAsset == item.FromAsset && markup.ToAsset == item.ToAsset)
+                if (markup.FromAsset == item.FromAsset && markup.ToAsset == item.ToAsset && markup.ProfileId == item.ProfileId)
                 {
                     newValue = item.Markup;
                 }
@@ -110,7 +110,8 @@ namespace Service.Liquidity.ConverterMarkups.Jobs
                     ToAsset = markup.ToAsset,
                     Markup = newValue,
                     Fee = markup.Fee,
-                    MinMarkup = markup.MinMarkup
+                    MinMarkup = markup.MinMarkup,
+                    ProfileId = markup.ProfileId
                 });
             }
             //--- For overview
@@ -145,7 +146,8 @@ namespace Service.Liquidity.ConverterMarkups.Jobs
                         ToAsset = item.ToAsset,
                         Markup = item.PrevMarkup,
                         Fee = item.Fee,
-                        MinMarkup = item.MinMarkup
+                        MinMarkup = item.MinMarkup,
+                        ProfileId = item.ProfileId
                     }
                 }
                 });

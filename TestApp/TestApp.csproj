@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="MyNoSqlServer.DataWriter" Version="1.7.3" />
+      <PackageReference Include="protobuf-net.Grpc" Version="1.0.152" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\src\Service.Liquidity.ConverterMarkups.Domain\Service.Liquidity.ConverterMarkups.Domain.csproj" />
+        <ProjectReference Include="..\src\Service.Liquidity.ConverterMarkups.Grpc\Service.Liquidity.ConverterMarkups.Grpc.csproj" />
+    </ItemGroup>
+
+</Project>

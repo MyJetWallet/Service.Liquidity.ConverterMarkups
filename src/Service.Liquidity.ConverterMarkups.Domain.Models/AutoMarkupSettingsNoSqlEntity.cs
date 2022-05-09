@@ -4,9 +4,9 @@ namespace Service.Liquidity.ConverterMarkups.Domain.Models
 {
     public class AutoMarkupSettingsNoSqlEntity: MyNoSqlDbEntity
     {
-        public const string TableName = "jetwallet-converter-markup-auto-settings";
-        private static string GeneratePartitionKey(string fromAsset) => fromAsset;
-        private static string GenerateRowKey(string toAsset) => toAsset;
+        public const string TableName = "jetwallet-converter-markup-auto-settings-v2";
+        public static string GeneratePartitionKey(string profileId) => $"{profileId}";
+        public static string GenerateRowKey(string fromAsset, string toAsset) => $"{fromAsset}-{toAsset}";
 
         public AutoMarkupSettings AutoMarkupSettings;
         
@@ -14,8 +14,8 @@ namespace Service.Liquidity.ConverterMarkups.Domain.Models
         {
             return new AutoMarkupSettingsNoSqlEntity()
             {
-                PartitionKey = GeneratePartitionKey(entity.FromAsset),
-                RowKey = GenerateRowKey(entity.ToAsset),
+                PartitionKey = GeneratePartitionKey(entity.ProfileId),
+                RowKey = GenerateRowKey(entity.FromAsset, entity.ToAsset),
                 AutoMarkupSettings = entity
             };
         }
