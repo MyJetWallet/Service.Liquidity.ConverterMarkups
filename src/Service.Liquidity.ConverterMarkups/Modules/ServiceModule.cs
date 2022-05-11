@@ -27,7 +27,9 @@ namespace Service.Liquidity.ConverterMarkups.Modules
                 AutoMarkupNoSqlEntity.TableName);
             builder.RegisterMyNoSqlWriter<AutoMarkupSettingsNoSqlEntity>(Program.ReloadedSettings(e => e.MyNoSqlWriterUrl),
                 AutoMarkupSettingsNoSqlEntity.TableName);
-
+            builder.RegisterMyNoSqlWriter<MarkupProfilesNoSqlEntity>(Program.ReloadedSettings(e => e.MyNoSqlWriterUrl),
+                MarkupProfilesNoSqlEntity.TableName);
+            
             builder.RegisterType<AssetDictionaryHandlerJob>().As<IStartable>().AutoActivate().SingleInstance();
             builder.RegisterType<AutoMarkupBackgroundJob>().As<IStartable>().As<IDisposable>().AutoActivate().SingleInstance();
             builder.RegisterType<ConverterMarkupService>().As<IConverterMarkupService>();
