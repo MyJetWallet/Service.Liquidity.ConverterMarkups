@@ -48,6 +48,7 @@ namespace Service.Liquidity.ConverterMarkups
             {
                 endpoints.MapGrpcSchema<ConverterMarkupService, IConverterMarkupService>();
                 endpoints.MapGrpcSchema<AutoMarkupService, IAutoMarkupService>();
+                endpoints.MapGrpcSchema<MarkupProfilesService, IMarkupProfilesService>();
 
                 endpoints.MapGrpcSchemaRegistry();
 
