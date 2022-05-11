@@ -13,7 +13,7 @@ namespace Service.Liquidity.ConverterMarkups.Modules
     {
         protected override void Load(ContainerBuilder builder)
         {
-            var noSqlClient = builder.CreateNoSqlClient(Program.ReloadedSettings(e => e.MyNoSqlReaderHostPort));
+            var noSqlClient = builder.CreateNoSqlClient(Program.Settings.MyNoSqlReaderHostPort, Program.LogFactory);
             builder.RegisterMyNoSqlReader<AssetNoSqlEntity>(noSqlClient, AssetNoSqlEntity.TableName);
             builder.RegisterMyNoSqlReader<AutoMarkupNoSqlEntity>(noSqlClient, AutoMarkupNoSqlEntity.TableName);
             builder.RegisterMyNoSqlReader<AutoMarkupSettingsNoSqlEntity>(noSqlClient, AutoMarkupSettingsNoSqlEntity.TableName);
