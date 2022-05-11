@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using ProtoBuf.Grpc.Client;
 using Service.Liquidity.ConverterMarkups.Domain;
 using Service.Liquidity.ConverterMarkups.Domain.Models;
+using MarkupProfileConsts = Service.Liquidity.ConverterMarkups.Domain.Models.MarkupProfileConsts;
 
 GrpcClientFactory.AllowUnencryptedHttp2 = true;
 
