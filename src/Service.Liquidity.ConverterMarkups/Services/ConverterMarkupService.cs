@@ -106,11 +106,11 @@ namespace Service.Liquidity.ConverterMarkups.Services
             }
         }
 
-        public async Task<GetMarkupOverviewResponse> GetMarkupOverviewAsync()
+        public async Task<GetMarkupOverviewResponse> GetMarkupOverviewAsync(GetMarkupOverviewRequest request)
         {
             try
             {
-                var overview = await _overviewHandler.GetOverview();
+                var overview = await _overviewHandler.GetOverview(request.ProfileId);
                 if (overview != null)
                 {
                     return new GetMarkupOverviewResponse()

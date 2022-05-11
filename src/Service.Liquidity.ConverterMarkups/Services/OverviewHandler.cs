@@ -33,10 +33,10 @@ namespace Service.Liquidity.ConverterMarkups.Services
             _groupWriter = groupWriter;
         }
 
-        public async Task<MarkupOverview> GetOverview()
+        public async Task<MarkupOverview> GetOverview(string profileId)
         {
             var overviewNoSql = await _overviewWriter.GetAsync();
-            var overEntity = overviewNoSql.FirstOrDefault()?.MarkupOverview;
+            var overEntity = overviewNoSql.FirstOrDefault(t=>t.MarkupOverview.ProfileId == profileId)?.MarkupOverview;
             return overEntity;
         }
         

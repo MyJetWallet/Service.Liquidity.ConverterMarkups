@@ -14,6 +14,6 @@ namespace Service.Liquidity.ConverterMarkups.Grpc
         [OperationContract]
         Task<RemoveMarkupSettingsResponse> RemoveMarkupSettingsAsync(RemoveMarkupSettingsRequest request);
         [OperationContract]
-        Task<GetMarkupOverviewResponse> GetMarkupOverviewAsync();
+        Task<GetMarkupOverviewResponse> GetMarkupOverviewAsync(GetMarkupOverviewRequest request);
     }
 }
