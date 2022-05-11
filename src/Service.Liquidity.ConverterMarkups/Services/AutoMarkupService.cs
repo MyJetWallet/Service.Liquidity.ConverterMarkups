@@ -101,7 +101,8 @@ namespace Service.Liquidity.ConverterMarkups.Services
                             UserId = request.Markup.UserId,
                             PrevMarkup = request.Markup.PrevMarkup,
                             Fee = request.Markup.Fee,
-                            MinMarkup = request.Markup.MinMarkup    
+                            MinMarkup = request.Markup.MinMarkup,
+                            ProfileId = request.Markup.ProfileId
                         }));
 
                     //Add to status table
@@ -122,7 +123,8 @@ namespace Service.Liquidity.ConverterMarkups.Services
                         User = request.Markup.UserId,
                         State = State.None,
                         Fee = request.Markup.Fee,
-                        MinMarkup = request.Markup.MinMarkup
+                        MinMarkup = request.Markup.MinMarkup,
+                        ProfileId = request.Markup.ProfileId
                     }));
                 }
                 return new AutoMarkupSettingsResponse

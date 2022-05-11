@@ -16,18 +16,21 @@ namespace Service.Liquidity.ConverterMarkups.Services
         private readonly ILogger<OverviewHandler> _logger;
         private readonly IMyNoSqlServerDataWriter<ConverterMarkupNoSqlEntity> _markupWriter;
         private readonly IMyNoSqlServerDataWriter<ConverterMarkupOverviewNoSqlEntity> _overviewWriter;
+        private readonly IMyNoSqlServerDataWriter<MarkupProfilesNoSqlEntity> _groupWriter;
+
         private readonly IMyNoSqlServerDataReader<AssetNoSqlEntity> _assetsReader;
         private const string AllSymbol = "*";
 
         public OverviewHandler(IMyNoSqlServerDataWriter<ConverterMarkupOverviewNoSqlEntity> overviewWriter,
             ILogger<OverviewHandler> logger, 
             IMyNoSqlServerDataWriter<ConverterMarkupNoSqlEntity> markupWriter, 
-            IMyNoSqlServerDataReader<AssetNoSqlEntity> assetsReader)
+            IMyNoSqlServerDataReader<AssetNoSqlEntity> assetsReader, IMyNoSqlServerDataWriter<MarkupProfilesNoSqlEntity> groupWriter)
         {
             _overviewWriter = overviewWriter;
             _logger = logger;
             _markupWriter = markupWriter;
             _assetsReader = assetsReader;
+            _groupWriter = groupWriter;
         }
 
         public async Task<MarkupOverview> GetOverview()
@@ -59,45 +62,54 @@ namespace Service.Liquidity.ConverterMarkups.Services
 
         private async Task UpdateOverview(IReadOnlyCollection<ConverterMarkup> markupSettings, IReadOnlyCollection<string> assets)
         {
-            var overview = new MarkupOverview()
+            var groups = await _groupWriter.GetAsync(MarkupProfilesNoSqlEntity.GeneratePartitionKey(),
+                MarkupProfilesNoSqlEntity.GenerateRowKey());
+            var groupsList = groups?.Profiles ?? new List<string>();
+            foreach (var group in groupsList)
             {
-                Overview = new List<ConverterMarkup>()
-            };
-            foreach (var assetFrom in assets)
-            {
-                foreach (var assetTo in assets)
+                var overview = new MarkupOverview()
                 {
-                    var (markup, minMarkup, fee) = GetMarkupAndFee(markupSettings, assetFrom, assetTo);
-                    overview.Overview.Add(new ConverterMarkup()
+                    Overview = new List<ConverterMarkup>(),
+                    ProfileId = group
+                };
+                foreach (var assetFrom in assets)
+                {
+                    foreach (var assetTo in assets)
                     {
-                        FromAsset = assetFrom,
-                        ToAsset = assetTo,
-                        Markup = markup,
-                        Fee = fee,
-                        MinMarkup = minMarkup
-                    });
+                        var (markup, minMarkup, fee) = GetMarkupAndFee(markupSettings, assetFrom, assetTo, group);
+                        overview.Overview.Add(new ConverterMarkup()
+                        {
+                            FromAsset = assetFrom,
+                            ToAsset = assetTo,
+                            Markup = markup,
+                            Fee = fee,
+                            MinMarkup = minMarkup
+                        });
+                    }
                 }
-            }
-            if (overview.Overview.Any())
-            {
-                await _overviewWriter.InsertOrReplaceAsync(ConverterMarkupOverviewNoSqlEntity.Create(overview));
-                _logger.LogInformation("Overview is updated: {overviewJson}", JsonConvert.SerializeObject(overview));
-            }
-            else
-            {
-                _logger.LogError("Cannot update markup overview");
+
+                if (overview.Overview.Any())
+                {
+                    await _overviewWriter.InsertOrReplaceAsync(ConverterMarkupOverviewNoSqlEntity.Create(overview));
+                    _logger.LogInformation("Overview is updated: {overviewJson}",
+                        JsonConvert.SerializeObject(overview));
+                }
+                else
+                {
+                    _logger.LogError("Cannot update markup overview");
+                }
             }
         }
 
-        private (decimal markup, decimal minMarkup, decimal fee) GetMarkupAndFee(IReadOnlyCollection<ConverterMarkup> converterMarkups, string assetFrom, string assetTo)
+        private (decimal markup, decimal minMarkup, decimal fee) GetMarkupAndFee(IReadOnlyCollection<ConverterMarkup> converterMarkups, string assetFrom, string assetTo, string group)
         {
-            var direct = GetMarkUpAndFeeByPair(converterMarkups, assetFrom, assetTo);
+            var direct = GetMarkUpAndFeeByPair(converterMarkups, assetFrom, assetTo, group);
             if (direct.found)
             {
                 return direct.settings;
             }
-            var fromAssetToAll = GetMarkUpAndFeeByPair(converterMarkups, assetFrom, AllSymbol);
-            var allToAssetTo = GetMarkUpAndFeeByPair(converterMarkups, AllSymbol, assetTo);
+            var fromAssetToAll = GetMarkUpAndFeeByPair(converterMarkups, assetFrom, AllSymbol, group);
+            var allToAssetTo = GetMarkUpAndFeeByPair(converterMarkups, AllSymbol, assetTo, group);
             if (fromAssetToAll.found && allToAssetTo.found)
             {
                 return fromAssetToAll.settings.markup > allToAssetTo.settings.markup ? fromAssetToAll.settings : allToAssetTo.settings;
@@ -110,7 +122,7 @@ namespace Service.Liquidity.ConverterMarkups.Services
             {
                 return allToAssetTo.settings;
             }
-            var allToAll = GetMarkUpAndFeeByPair(converterMarkups, AllSymbol, AllSymbol);
+            var allToAll = GetMarkUpAndFeeByPair(converterMarkups, AllSymbol, AllSymbol, group);
             if (allToAll.found)
             {
                 return allToAll.settings;
@@ -119,9 +131,9 @@ namespace Service.Liquidity.ConverterMarkups.Services
             return (0m, 0m, 0m);
         }
 
-        private static (bool found, (decimal markup, decimal minMarkup, decimal fee) settings) GetMarkUpAndFeeByPair(IEnumerable<ConverterMarkup> converterMarkups, string assetFrom, string assetTo)
+        private static (bool found, (decimal markup, decimal minMarkup, decimal fee) settings) GetMarkUpAndFeeByPair(IEnumerable<ConverterMarkup> converterMarkups, string assetFrom, string assetTo, string group)
         {
-            var markup = converterMarkups.FirstOrDefault(e => e.FromAsset == assetFrom && e.ToAsset == assetTo);
+            var markup = converterMarkups.FirstOrDefault(e => e.FromAsset == assetFrom && e.ToAsset == assetTo && e.ProfileId == group);
             return (markup != null,(markup?.Markup ?? 0m, markup?.MinMarkup ?? 0m, markup?.Fee ?? 0m));
         }
     }
