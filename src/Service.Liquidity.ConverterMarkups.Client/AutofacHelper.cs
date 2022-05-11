@@ -24,6 +24,9 @@ namespace Service.Liquidity.ConverterMarkups.Client
 
             builder.RegisterInstance(factory.GetConverterMarkupService())
                 .As<IConverterMarkupService>().SingleInstance();
+            
+            builder.RegisterInstance(factory.GetProfileMarkupService())
+                .As<IMarkupProfilesService>().SingleInstance();
         }
 
         public static void RegisterAutoMarkupClient(this ContainerBuilder builder, string grpcServiceUrl)

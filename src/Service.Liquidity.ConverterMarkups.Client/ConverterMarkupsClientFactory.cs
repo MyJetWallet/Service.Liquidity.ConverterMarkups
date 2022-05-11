@@ -12,5 +12,8 @@ namespace Service.Liquidity.ConverterMarkups.Client
         }
 
         public IConverterMarkupService GetConverterMarkupService() => CreateGrpcService<IConverterMarkupService>();
+        
+        public IMarkupProfilesService GetProfileMarkupService() => CreateGrpcService<IMarkupProfilesService>();
+
     }
 }
