@@ -5,8 +5,8 @@ namespace Service.Liquidity.ConverterMarkups.Domain.Models
     public class ConverterMarkupOverviewNoSqlEntity : MyNoSqlDbEntity
     {
         public const string TableName = "jetwallet-converter-markup-overview-v2";
-        private static string GeneratePartitionKey() => "overview";
-        private static string GenerateRowKey(string profileId) => $"{profileId}";
+        public static string GeneratePartitionKey() => "overview";
+        public static string GenerateRowKey(string profileId) => $"{profileId}";
 
         public MarkupOverview MarkupOverview;
         
