@@ -87,7 +87,7 @@ namespace Service.Liquidity.ConverterMarkups.Services
         {
             try
             {
-                await _markupWriter.DeleteAsync(request.FromAsset, request.ToAsset);
+                await _markupWriter.DeleteAsync(ConverterMarkupNoSqlEntity.GeneratePartitionKey(request.ProfileId),ConverterMarkupNoSqlEntity.GenerateRowKey(request.FromAsset, request.ToAsset));
                 await _overviewHandler.UpdateOverview();
                 
                 return new RemoveMarkupSettingsResponse()

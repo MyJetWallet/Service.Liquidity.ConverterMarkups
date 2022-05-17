@@ -58,7 +58,7 @@ namespace Service.Liquidity.ConverterMarkups.Services
         {
             try
             {
-                await _autoMarkupWriter.DeleteAsync(request.FromAsset, request.ToAsset);
+                await _autoMarkupWriter.DeleteAsync(AutoMarkupNoSqlEntity.GeneratePartitionKey(request.ProfileId), AutoMarkupNoSqlEntity.GenerateRowKey(request.FromAsset, request.ToAsset));
                 
                 return new RemoveAutoMarkupSettingsResponse()
                 {
