@@ -58,7 +58,7 @@ namespace Service.Liquidity.ConverterMarkups.Services
                         markup.ProfileId = request.ProfileId;
                     }
 
-                    await _markupWriter.BulkInsertOrReplaceAsync(markups.Select(ConverterMarkupNoSqlEntity.Create));
+                    await _markupWriter.BulkInsertOrReplaceAsync(markups.Select(ConverterMarkupNoSqlEntity.Create).ToList());
                     await _overviewHandler.UpdateOverview();
 
 
@@ -69,7 +69,7 @@ namespace Service.Liquidity.ConverterMarkups.Services
                     {
                         autoMarkup.ProfileId = request.ProfileId;
                     }
-                    await _autoMarkupWriter.BulkInsertOrReplaceAsync(autoMarkups.Select(AutoMarkupNoSqlEntity.Create));
+                    await _autoMarkupWriter.BulkInsertOrReplaceAsync(autoMarkups.Select(AutoMarkupNoSqlEntity.Create).ToList());
                     
                     
                     var autoMarkupSettings =
@@ -79,7 +79,7 @@ namespace Service.Liquidity.ConverterMarkups.Services
                     {
                         setting.ProfileId = request.ProfileId;
                     }
-                    await _autoMarkupSettingWriter.BulkInsertOrReplaceAsync(autoMarkupSettings.Select(AutoMarkupSettingsNoSqlEntity.Create));
+                    await _autoMarkupSettingWriter.BulkInsertOrReplaceAsync(autoMarkupSettings.Select(AutoMarkupSettingsNoSqlEntity.Create).ToList());
                 }
 
                 return new OperationResponse()

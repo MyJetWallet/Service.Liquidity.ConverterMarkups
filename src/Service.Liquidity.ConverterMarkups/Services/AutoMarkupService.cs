@@ -181,7 +181,7 @@ namespace Service.Liquidity.ConverterMarkups.Services
         {
             try
             {
-                var noSqlEntities = request.MarkupSettings.Select(AutoMarkupSettingsNoSqlEntity.Create);
+                var noSqlEntities = request.MarkupSettings.Select(AutoMarkupSettingsNoSqlEntity.Create).ToList();
                 await _autoMarkupSettingWriter.BulkInsertOrReplaceAsync(noSqlEntities);
 
                 return new UpsertAutoMarkupSettingsResponse()

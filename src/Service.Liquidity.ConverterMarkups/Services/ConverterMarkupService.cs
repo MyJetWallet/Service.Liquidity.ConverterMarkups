@@ -58,7 +58,7 @@ namespace Service.Liquidity.ConverterMarkups.Services
             try
             {
                 var noSqlEntities = request
-                    .MarkupSettings.Select(ConverterMarkupNoSqlEntity.Create);
+                    .MarkupSettings.Select(ConverterMarkupNoSqlEntity.Create).ToList();
                 await _markupWriter.BulkInsertOrReplaceAsync(noSqlEntities);
 
                 var markupSettings = await _markupWriter.GetAsync();
