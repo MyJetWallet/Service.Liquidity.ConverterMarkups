@@ -125,6 +125,19 @@ namespace Service.Liquidity.ConverterMarkups.Services
                         ErrorMessage = "Delay should be more then zero",
                     };
                 }
+                
+                var pk = AutoMarkupNoSqlEntity.GeneratePartitionKey(request.Markup.ProfileId);
+                var rk = AutoMarkupNoSqlEntity.GenerateRowKey(request.Markup.FromAsset, request.Markup.ToAsset);
+                var markup= _autoMarkupReader.Get(pk, rk);
+
+                if (markup?.AutoMarkup != null && markup.AutoMarkup.State == AutoMarkupState.Active)
+                {
+                    return new AutoMarkupSettingsResponse
+                    {
+                        Success = false,
+                        ErrorMessage = "Active markup already exists",
+                    };
+                }
 
                 await _autoMarkupSettingWriter.InsertOrReplaceAsync(
                     AutoMarkupSettingsNoSqlEntity.Create(new AutoMarkupSettings
