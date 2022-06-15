@@ -68,7 +68,6 @@ namespace Service.Liquidity.ConverterMarkups.Jobs
                         break;
                     case AutoMarkupState.Deactivated:
                         await SetUpPrevMarkup(item);
-                        await _autoMarkupWriter.DeleteAsync(item.FromAsset, item.ToAsset);
                         break;
                 }
             }
@@ -76,9 +75,12 @@ namespace Service.Liquidity.ConverterMarkups.Jobs
 
         private async Task RemoveDoneMarkup(AutoMarkup item)
         {
-            if (item.StopTime <= DateTime.UtcNow && item.State == AutoMarkupState.Done)
+            if (item.State == AutoMarkupState.Done)
             {
-                await _autoMarkupWriter.DeleteAsync(item.FromAsset, item.ToAsset);
+                var pk = AutoMarkupNoSqlEntity.GeneratePartitionKey(item.ProfileId);
+                var rk = AutoMarkupNoSqlEntity.GeneratePartitionKey(item.ProfileId);
+
+                await _autoMarkupWriter.DeleteAsync(pk, rk);
                 
                 _logger.LogInformation("Remove new markup task successfully {@Item}", item);
             }
