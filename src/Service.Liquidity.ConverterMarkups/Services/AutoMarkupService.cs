@@ -11,7 +11,7 @@ using Service.Liquidity.ConverterMarkups.Grpc.Models;
 
 namespace Service.Liquidity.ConverterMarkups.Services
 {
-    public class AutoMarkupService: IAutoMarkupService
+    public class AutoMarkupService : IAutoMarkupService
     {
         private readonly ILogger<AutoMarkupService> _logger;
         private readonly IMyNoSqlServerDataWriter<AutoMarkupSettingsNoSqlEntity> _autoMarkupSettingWriter;
@@ -19,11 +19,13 @@ namespace Service.Liquidity.ConverterMarkups.Services
         private readonly IMyNoSqlServerDataWriter<AutoMarkupNoSqlEntity> _autoMarkupWriter;
         private readonly IMyNoSqlServerDataReader<AutoMarkupNoSqlEntity> _autoMarkupReader;
 
-        public AutoMarkupService(ILogger<AutoMarkupService> logger, 
-            IMyNoSqlServerDataReader<AutoMarkupNoSqlEntity> autoMarkupReader, 
-            IMyNoSqlServerDataWriter<AutoMarkupNoSqlEntity> autoMarkupWriter, 
-            IMyNoSqlServerDataWriter<AutoMarkupSettingsNoSqlEntity> autoMarkupSettingWriter, 
-            IMyNoSqlServerDataReader<AutoMarkupSettingsNoSqlEntity> autoMarkupSettingReader)
+        public AutoMarkupService(
+            ILogger<AutoMarkupService> logger,
+            IMyNoSqlServerDataReader<AutoMarkupNoSqlEntity> autoMarkupReader,
+            IMyNoSqlServerDataWriter<AutoMarkupNoSqlEntity> autoMarkupWriter,
+            IMyNoSqlServerDataWriter<AutoMarkupSettingsNoSqlEntity> autoMarkupSettingWriter,
+            IMyNoSqlServerDataReader<AutoMarkupSettingsNoSqlEntity> autoMarkupSettingReader
+        )
         {
             _logger = logger;
             _autoMarkupReader = autoMarkupReader;
@@ -37,7 +39,8 @@ namespace Service.Liquidity.ConverterMarkups.Services
             try
             {
                 var markups = _autoMarkupSettingReader.Get();
-                return new GetAutoMarkupSettingsResponse()
+
+                return new GetAutoMarkupSettingsResponse
                 {
                     Success = true,
                     AutoMarkupItems = markups.Select(e => e.AutoMarkupSettings).ToList()
@@ -45,8 +48,8 @@ namespace Service.Liquidity.ConverterMarkups.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, ex.Message);
-                return new GetAutoMarkupSettingsResponse()
+                _logger.LogError(ex, "Failed to GetAutoMarkupSettingsAsync");
+                return new GetAutoMarkupSettingsResponse
                 {
                     Success = false,
                     ErrorMessage = ex.Message
@@ -54,12 +57,14 @@ namespace Service.Liquidity.ConverterMarkups.Services
             }
         }
 
-        public async Task<RemoveAutoMarkupSettingsResponse> RemoveAutoMarkupSettingsAsync(RemoveAutoMarkupSettingsRequest request)
+        public async Task<RemoveAutoMarkupSettingsResponse> RemoveAutoMarkupSettingsAsync(
+            RemoveAutoMarkupSettingsRequest request)
         {
             try
             {
-                await _autoMarkupWriter.DeleteAsync(AutoMarkupNoSqlEntity.GeneratePartitionKey(request.ProfileId), AutoMarkupNoSqlEntity.GenerateRowKey(request.FromAsset, request.ToAsset));
-                
+                await _autoMarkupWriter.DeleteAsync(AutoMarkupNoSqlEntity.GeneratePartitionKey(request.ProfileId),
+                    AutoMarkupNoSqlEntity.GenerateRowKey(request.FromAsset, request.ToAsset));
+
                 return new RemoveAutoMarkupSettingsResponse()
                 {
                     Success = true
@@ -67,10 +72,42 @@ namespace Service.Liquidity.ConverterMarkups.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, ex.Message);
+                _logger.LogError(ex, "Failed to RemoveAutoMarkupSettingsAsync");
                 return new RemoveAutoMarkupSettingsResponse()
                 {
                     Success = false,
+                    ErrorMessage = ex.Message
+                };
+            }
+        }
+
+        public async Task<DeactivateAutoMarkupResponse> DeactivateAutoMarkupAsync(DeactivateAutoMarkupRequest request)
+        {
+            try
+            {
+                var pk = AutoMarkupNoSqlEntity.GeneratePartitionKey(request.AutoMarkup.ProfileId);
+                var rk = AutoMarkupNoSqlEntity.GenerateRowKey(request.AutoMarkup.FromAsset, request.AutoMarkup.ToAsset);
+                var markup= _autoMarkupReader.Get(pk, rk);
+                
+                if (markup?.AutoMarkup == null)
+                {
+                    return new DeactivateAutoMarkupResponse
+                    {
+                        IsError = true,
+                        ErrorMessage = "Markup don't found"
+                    };
+                }
+
+                markup.AutoMarkup.State = AutoMarkupState.Deactivated;
+                await _autoMarkupWriter.InsertOrReplaceAsync(markup);
+
+                return new DeactivateAutoMarkupResponse();
+            }
+            catch (Exception ex)
+            {
+                return new DeactivateAutoMarkupResponse
+                {
+                    IsError = true,
                     ErrorMessage = ex.Message
                 };
             }
@@ -80,96 +117,94 @@ namespace Service.Liquidity.ConverterMarkups.Services
         {
             try
             {
-                if (request != null)
+                if (request.Markup.Delay == 0m)
                 {
-                    if (request.Markup.Delay == 0m)
+                    return new AutoMarkupSettingsResponse
                     {
-                        return new AutoMarkupSettingsResponse
-                        {
-                            Success = false,
-                            ErrorMessage = "Delay should be more then zero",
-                        };
-                    }
+                        Success = false,
+                        ErrorMessage = "Delay should be more then zero",
+                    };
+                }
 
-                    await _autoMarkupSettingWriter
-                        .InsertOrReplaceAsync(AutoMarkupSettingsNoSqlEntity.Create(new AutoMarkupSettings
-                        {
-                            FromAsset = request.Markup.FromAsset,
-                            ToAsset = request.Markup.ToAsset,
-                            Percent = request.Markup.Percent,
-                            Delay = request.Markup.Delay,
-                            UserId = request.Markup.UserId,
-                            PrevMarkup = request.Markup.PrevMarkup,
-                            Fee = request.Markup.Fee,
-                            MinMarkup = request.Markup.MinMarkup,
-                            ProfileId = request.Markup.ProfileId
-                        }));
-
-                    //Add to status table
-                    var startTime = DateTime.UtcNow;
-                    var stopTime = startTime.AddMinutes(Decimal.ToDouble(request.Markup.Delay));
-
-                    var newMarkup = request.Markup.PrevMarkup + request.Markup.PrevMarkup * request.Markup.Percent/100;
-                    await _autoMarkupWriter.InsertAsync(AutoMarkupNoSqlEntity.Create(new AutoMarkup
+                await _autoMarkupSettingWriter.InsertOrReplaceAsync(
+                    AutoMarkupSettingsNoSqlEntity.Create(new AutoMarkupSettings
                     {
                         FromAsset = request.Markup.FromAsset,
                         ToAsset = request.Markup.ToAsset,
                         Percent = request.Markup.Percent,
                         Delay = request.Markup.Delay,
-                        Markup = newMarkup,
-                        StartTime = startTime,
-                        StopTime = stopTime,
+                        UserId = request.Markup.UserId,
                         PrevMarkup = request.Markup.PrevMarkup,
-                        User = request.Markup.UserId,
-                        State = State.None,
                         Fee = request.Markup.Fee,
                         MinMarkup = request.Markup.MinMarkup,
-                        ProfileId = request.Markup.ProfileId
+                        ProfileId = request.Markup.ProfileId,
                     }));
-                }
+
+                var startTime = DateTime.UtcNow;
+                var stopTime = startTime.AddMinutes(decimal.ToDouble(request.Markup.Delay));
+
+                var newMarkup = request.Markup.PrevMarkup + request.Markup.PrevMarkup * request.Markup.Percent / 100;
+                await _autoMarkupWriter.InsertAsync(AutoMarkupNoSqlEntity.Create(new AutoMarkup
+                {
+                    FromAsset = request.Markup.FromAsset,
+                    ToAsset = request.Markup.ToAsset,
+                    Percent = request.Markup.Percent,
+                    Delay = request.Markup.Delay,
+                    Markup = newMarkup,
+                    StartTime = startTime,
+                    StopTime = stopTime,
+                    PrevMarkup = request.Markup.PrevMarkup,
+                    User = request.Markup.UserId,
+                    State = AutoMarkupState.Pending,
+                    Fee = request.Markup.Fee,
+                    MinMarkup = request.Markup.MinMarkup,
+                    ProfileId = request.Markup.ProfileId,
+                }));
+
                 return new AutoMarkupSettingsResponse
                 {
                     Success = true,
-                    ErrorMessage = string.Empty,
                 };
             }
             catch (Exception e)
             {
-                _logger.LogError(e, e.Message);
+                _logger.LogError(e, "Failed to activate settings");
+                return new AutoMarkupSettingsResponse
+                {
+                    Success = false,
+                    ErrorMessage = e.Message,
+                };
             }
-            return new AutoMarkupSettingsResponse
-            {
-                Success = false,
-                ErrorMessage = "Not Implemented",
-            };
         }
-
 
         public async Task<GetAutoMarkupsResponse> GetAutoMarkupStatusAsync()
         {
             try
             {
                 var entities = _autoMarkupReader.Get();
-                if (entities != null)
+
+                if (entities == null)
                 {
-                    return new GetAutoMarkupsResponse()
+                    const string errorMessage = "AutoMarkupItems is empty.";
+                    _logger.LogWarning(errorMessage);
+
+                    return new GetAutoMarkupsResponse
                     {
-                        Success = true,
-                        AutoMarkupItems = entities.Select(e => e.AutoMarkup).ToList()
+                        Success = false,
+                        ErrorMessage = errorMessage
                     };
                 }
-                var errorMessage = "AutoMarkupItems is empty.";
-                _logger.LogError(errorMessage);
-                return new GetAutoMarkupsResponse()
+
+                return new GetAutoMarkupsResponse
                 {
-                    Success = false,
-                    ErrorMessage = errorMessage
+                    Success = true,
+                    AutoMarkupItems = entities.Select(e => e.AutoMarkup).ToList()
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, ex.Message);
-                return new GetAutoMarkupsResponse()
+                _logger.LogError(ex, "Failed to GetAutoMarkupStatusAsync");
+                return new GetAutoMarkupsResponse
                 {
                     Success = false,
                     ErrorMessage = ex.Message
@@ -177,22 +212,23 @@ namespace Service.Liquidity.ConverterMarkups.Services
             }
         }
 
-        public async Task<UpsertAutoMarkupSettingsResponse> UpsertAutoMarkupSettingsAsync(UpsertAutoMarkupSettingsRequest request)
+        public async Task<UpsertAutoMarkupSettingsResponse> UpsertAutoMarkupSettingsAsync(
+            UpsertAutoMarkupSettingsRequest request)
         {
             try
             {
                 var noSqlEntities = request.MarkupSettings.Select(AutoMarkupSettingsNoSqlEntity.Create).ToList();
                 await _autoMarkupSettingWriter.BulkInsertOrReplaceAsync(noSqlEntities);
 
-                return new UpsertAutoMarkupSettingsResponse()
+                return new UpsertAutoMarkupSettingsResponse
                 {
                     Success = true
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, ex.Message);
-                return new UpsertAutoMarkupSettingsResponse()
+                _logger.LogError(ex, "Failed to UpsertAutoMarkupSettingsAsync");
+                return new UpsertAutoMarkupSettingsResponse
                 {
                     Success = false,
                     ErrorMessage = ex.Message

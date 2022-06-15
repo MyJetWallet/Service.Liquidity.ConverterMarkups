@@ -14,5 +14,7 @@ namespace Service.Liquidity.ConverterMarkups.Domain.Models
         [DataMember(Order = 7)] public decimal Fee { get; set; }
         [DataMember(Order = 8)] public decimal MinMarkup { get; set; }
         [DataMember(Order = 9)] public string ProfileId { get; set; }
+        [DataMember(Order = 10)] public decimal VelocityPercent { get; set; }
+
     }
 }

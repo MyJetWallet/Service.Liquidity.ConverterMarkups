@@ -23,6 +23,8 @@ namespace Service.Liquidity.ConverterMarkups.Grpc
 
         [OperationContract]
         Task<RemoveAutoMarkupSettingsResponse> RemoveAutoMarkupSettingsAsync(RemoveAutoMarkupSettingsRequest request);
-
+        
+        [OperationContract]
+        Task<DeactivateAutoMarkupResponse> DeactivateAutoMarkupAsync(DeactivateAutoMarkupRequest request);
     }
 }

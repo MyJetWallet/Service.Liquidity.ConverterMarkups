@@ -29,7 +29,7 @@ namespace Service.Liquidity.ConverterMarkups.Jobs
         {
             _logger = logger;
             _markupService = markupService;
-            _autoMarkupWriter = autoMarkupWriter; 
+            _autoMarkupWriter = autoMarkupWriter;
             _autoMarkupReader = autoMarkupReader;
             _operationsTimer = new MyTaskTimer(nameof(AutoMarkupBackgroundJob),
                 TimeSpan.FromSeconds(TimerSpanSec), logger, Process);
@@ -51,59 +51,61 @@ namespace Service.Liquidity.ConverterMarkups.Jobs
             foreach (var entity in _autoMarkupReader.Get())
             {
                 var item = entity.AutoMarkup;
+                
                 switch (item.State)
                 {
-                    case State.None:
+                    case AutoMarkupState.Pending:
                         await SetUpNewMarkup(item);
                         break;
-
-                    case State.InProgress:
+                    case AutoMarkupState.Active:
                         if (IsNeedToSetPrevValue(item))
                         {
                             await SetUpPrevMarkup(item);
                         }
                         break;
-
-                    case State.Done:
-                        await RemoveNewMarkup(item);
+                    case AutoMarkupState.Done:
+                        await RemoveDoneMarkup(item);
+                        break;
+                    case AutoMarkupState.Deactivated:
+                        await SetUpPrevMarkup(item);
+                        await _autoMarkupWriter.DeleteAsync(item.FromAsset, item.ToAsset);
                         break;
                 }
-
             }
         }
 
-        private async Task RemoveNewMarkup(AutoMarkup item)
+        private async Task RemoveDoneMarkup(AutoMarkup item)
         {
-            var currTime = DateTime.UtcNow;
-            if ((item.StopTime <= currTime && item.State == State.Done))
+            if (item.StopTime <= DateTime.UtcNow && item.State == AutoMarkupState.Done)
             {
                 await _autoMarkupWriter.DeleteAsync(item.FromAsset, item.ToAsset);
-                _logger.LogInformation($"Remove new markup task successfully {item.ToJson()}");
-                return;
+                
+                _logger.LogInformation("Remove new markup task successfully {@Item}", item);
             }
         }
 
-        private bool IsNeedToSetPrevValue(AutoMarkup item)
+        private static bool IsNeedToSetPrevValue(AutoMarkup item)
         {
-            var currTime = DateTime.UtcNow;
-            return (item.StopTime <= currTime && item.State == State.InProgress);
+            return item.StopTime <= DateTime.UtcNow && item.State == AutoMarkupState.Active;
         }
 
-        private async Task<bool> SetUpNewMarkup(AutoMarkup item)
+        private async Task SetUpNewMarkup(AutoMarkup item)
         {
             var update = AutoMarkupNoSqlEntity.Create(item);
-            update.AutoMarkup.State = State.InProgress;
-            //--- For overview
+            update.AutoMarkup.State = AutoMarkupState.Active;
             var allMarkupsResponse = await _markupService.GetMarkupSettingsAsync();
             var allMarkups = allMarkupsResponse?.MarkupSettings ?? new List<ConverterMarkup>();
             var newMarkups = new List<ConverterMarkup>();
+
             foreach (var markup in allMarkups)
             {
                 var newValue = markup.Markup;
-                if (markup.FromAsset == item.FromAsset && markup.ToAsset == item.ToAsset && markup.ProfileId == item.ProfileId)
+                if (markup.FromAsset == item.FromAsset && markup.ToAsset == item.ToAsset &&
+                    markup.ProfileId == item.ProfileId)
                 {
                     newValue = item.Markup;
                 }
+
                 newMarkups.Add(new ConverterMarkup
                 {
                     FromAsset = markup.FromAsset,
@@ -114,59 +116,55 @@ namespace Service.Liquidity.ConverterMarkups.Jobs
                     ProfileId = markup.ProfileId
                 });
             }
-            //--- For overview
+
             var result = await _markupService.UpsertMarkupSettingsAsync(new UpsertMarkupSettingsRequest
             {
                 MarkupSettings = newMarkups
             });
 
-            if (result == null || !result.Success)
+            if (result is {Success: false})
             {
-                _logger.LogError($"Cant setup new markup {update.AutoMarkup.ToJson()}");
-                return false;
+                return;
             }
 
             await _autoMarkupWriter.InsertOrReplaceAsync(update);
             var prev = update.AutoMarkup.PrevMarkup;
             var curr = update.AutoMarkup.Markup;
-            _logger.LogInformation($"Setup new markup {prev}->{curr} task successfully {update.AutoMarkup.ToJson()}");
-            return true;
+
+            _logger.LogInformation("Setup new markup {@Curr}->{@Prev} task successfully {@Item}", curr, prev, item);
         }
 
-        private async Task<bool> SetUpPrevMarkup(AutoMarkup item)
+        private async Task SetUpPrevMarkup(AutoMarkup item)
         {
-            var result = await _markupService
-                .UpsertMarkupSettingsAsync(new UpsertMarkupSettingsRequest
-            {
-                    MarkupSettings = new List<ConverterMarkup>()
+            var result = await _markupService.UpsertMarkupSettingsAsync(
+                new UpsertMarkupSettingsRequest
                 {
-                    new ConverterMarkup
+                    MarkupSettings = new List<ConverterMarkup>
                     {
-                        FromAsset = item.FromAsset,
-                        ToAsset = item.ToAsset,
-                        Markup = item.PrevMarkup,
-                        Fee = item.Fee,
-                        MinMarkup = item.MinMarkup,
-                        ProfileId = item.ProfileId
+                        new ConverterMarkup
+                        {
+                            FromAsset = item.FromAsset,
+                            ToAsset = item.ToAsset,
+                            Markup = item.PrevMarkup,
+                            Fee = item.Fee,
+                            MinMarkup = item.MinMarkup,
+                            ProfileId = item.ProfileId
+                        }
                     }
-                }
                 });
 
-            if (result == null || !result.Success)
+            if (result is {Success: false})
             {
-                _logger.LogError($"Cant setup prev markup {item.ToJson()}");
-                return false;
+                return;
             }
 
             var update = AutoMarkupNoSqlEntity.Create(item);
-            update.AutoMarkup.State = State.Done;
+            update.AutoMarkup.State = AutoMarkupState.Done;
             var prev = update.AutoMarkup.PrevMarkup;
             var curr = update.AutoMarkup.Markup;
             await _autoMarkupWriter.InsertOrReplaceAsync(update);
 
-            _logger.LogInformation($"Setup prev markup {curr}->{prev} task successfully {item.ToJson()}");
-            return true;
+            _logger.LogInformation("Setup prev markup {@Curr}->{@Prev} task successfully {@Item}", curr, prev, item);
         }
-
     }
 }
