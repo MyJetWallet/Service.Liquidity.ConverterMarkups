@@ -78,7 +78,7 @@ namespace Service.Liquidity.ConverterMarkups.Jobs
             if (item.State == AutoMarkupState.Done)
             {
                 var pk = AutoMarkupNoSqlEntity.GeneratePartitionKey(item.ProfileId);
-                var rk = AutoMarkupNoSqlEntity.GeneratePartitionKey(item.ProfileId);
+                var rk = AutoMarkupNoSqlEntity.GenerateRowKey(item.FromAsset, item.ToAsset);
 
                 await _autoMarkupWriter.DeleteAsync(pk, rk);
                 
