@@ -13,7 +13,7 @@ namespace Service.Liquidity.ConverterMarkups.Grpc
 
         //Settings
         [OperationContract]
-        Task<AutoMarkupSettingsResponse> ActivateAutoMarkupSettingsAsync(AutoMarkupSettingsRequest request);
+        Task<ActivateAutoMarkupSettingsResponse> ActivateAutoMarkupSettingsAsync(ActivateAutoMarkupSettingsRequest request);
 
         [OperationContract]
         Task<UpsertAutoMarkupSettingsResponse> UpsertAutoMarkupSettingsAsync(UpsertAutoMarkupSettingsRequest request);
