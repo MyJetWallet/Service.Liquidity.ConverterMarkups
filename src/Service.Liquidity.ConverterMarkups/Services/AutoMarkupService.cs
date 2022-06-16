@@ -16,6 +16,7 @@ namespace Service.Liquidity.ConverterMarkups.Services
         private readonly ILogger<AutoMarkupService> _logger;
         private readonly IMyNoSqlServerDataWriter<AutoMarkupSettingsNoSqlEntity> _autoMarkupSettingWriter;
         private readonly IMyNoSqlServerDataReader<AutoMarkupSettingsNoSqlEntity> _autoMarkupSettingReader;
+        private readonly IMyNoSqlServerDataReader<ConverterMarkupNoSqlEntity> _markupReader;
         private readonly IMyNoSqlServerDataWriter<AutoMarkupNoSqlEntity> _autoMarkupWriter;
         private readonly IMyNoSqlServerDataReader<AutoMarkupNoSqlEntity> _autoMarkupReader;
 
@@ -24,7 +25,8 @@ namespace Service.Liquidity.ConverterMarkups.Services
             IMyNoSqlServerDataReader<AutoMarkupNoSqlEntity> autoMarkupReader,
             IMyNoSqlServerDataWriter<AutoMarkupNoSqlEntity> autoMarkupWriter,
             IMyNoSqlServerDataWriter<AutoMarkupSettingsNoSqlEntity> autoMarkupSettingWriter,
-            IMyNoSqlServerDataReader<AutoMarkupSettingsNoSqlEntity> autoMarkupSettingReader
+            IMyNoSqlServerDataReader<AutoMarkupSettingsNoSqlEntity> autoMarkupSettingReader,
+            IMyNoSqlServerDataReader<ConverterMarkupNoSqlEntity> markupReader
         )
         {
             _logger = logger;
@@ -32,6 +34,91 @@ namespace Service.Liquidity.ConverterMarkups.Services
             _autoMarkupWriter = autoMarkupWriter;
             _autoMarkupSettingWriter = autoMarkupSettingWriter;
             _autoMarkupSettingReader = autoMarkupSettingReader;
+            _markupReader = markupReader;
+        }
+        
+         public async Task<AutoMarkupSettingsResponse> ActivateAutoMarkupSettingsAsync(AutoMarkupSettingsRequest request)
+        {
+            try
+            {
+                if (request.Markup.DurationMinutes == 0m)
+                {
+                    return new AutoMarkupSettingsResponse
+                    {
+                        Success = false,
+                        ErrorMessage = "Delay should be more then zero",
+                    };
+                }
+                
+                var pk = AutoMarkupNoSqlEntity.GeneratePartitionKey(request.Markup.ProfileId);
+                var rk = AutoMarkupNoSqlEntity.GenerateRowKey(request.Markup.FromAsset, request.Markup.ToAsset);
+                var autoMarkup= _autoMarkupReader.Get(pk, rk);
+
+                if (autoMarkup?.AutoMarkup != null && autoMarkup.AutoMarkup.State == AutoMarkupState.Active)
+                {
+                    return new AutoMarkupSettingsResponse
+                    {
+                        Success = false,
+                        ErrorMessage = "Active markup already exists",
+                    };
+                }
+
+                var markup = _markupReader.Get(pk, rk);
+
+                if (markup?.ConverterMarkup == null)
+                {
+                    return new AutoMarkupSettingsResponse
+                    {
+                        Success = false,
+                        ErrorMessage = "Converter markup not found",
+                    };
+                }
+
+                await _autoMarkupSettingWriter.InsertOrReplaceAsync(
+                    AutoMarkupSettingsNoSqlEntity.Create(new AutoMarkupSettings
+                    {
+                        FromAsset = request.Markup.FromAsset,
+                        ToAsset = request.Markup.ToAsset,
+                        IncreasePercent = request.Markup.IncreasePercent,
+                        DurationMinutes = request.Markup.DurationMinutes,
+                        ProfileId = request.Markup.ProfileId,
+                    }));
+
+                var startTime = DateTime.UtcNow;
+                var stopTime = startTime.AddMinutes(decimal.ToDouble(request.Markup.DurationMinutes));
+
+                var newMarkup = markup.ConverterMarkup.Markup + markup.ConverterMarkup.Markup * request.Markup.IncreasePercent / 100;
+                await _autoMarkupWriter.InsertAsync(AutoMarkupNoSqlEntity.Create(new AutoMarkup
+                {
+                    FromAsset = request.Markup.FromAsset,
+                    ToAsset = request.Markup.ToAsset,
+                    Percent = request.Markup.IncreasePercent,
+                    Delay = request.Markup.DurationMinutes,
+                    Markup = newMarkup,
+                    StartTime = startTime,
+                    StopTime = stopTime,
+                    PrevMarkup = markup.ConverterMarkup.Markup,
+                    User = "",
+                    State = AutoMarkupState.Pending,
+                    Fee = markup.ConverterMarkup.Fee,
+                    MinMarkup = markup.ConverterMarkup.MinMarkup,
+                    ProfileId = request.Markup.ProfileId,
+                }));
+
+                return new AutoMarkupSettingsResponse
+                {
+                    Success = true,
+                };
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed to activate settings");
+                return new AutoMarkupSettingsResponse
+                {
+                    Success = false,
+                    ErrorMessage = e.Message,
+                };
+            }
         }
 
         public async Task<GetAutoMarkupSettingsResponse> GetAutoMarkupSettingsAsync()
@@ -113,7 +200,7 @@ namespace Service.Liquidity.ConverterMarkups.Services
             }
         }
 
-        public async Task<ActivateAutoMarkupSettingsResponse> ActivateAutoMarkupSettingsAsync(ActivateAutoMarkupSettingsRequest request)
+        public async Task<ActivateAutoMarkupSettingsResponse> ActivateAutoMarkupAsync(ActivateAutoMarkupSettingsRequest request)
         {
             try
             {

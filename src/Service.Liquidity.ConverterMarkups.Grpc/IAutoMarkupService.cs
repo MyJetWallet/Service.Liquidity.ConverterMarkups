@@ -1,3 +1,4 @@
+using System;
 using System.ServiceModel;
 using System.Threading.Tasks;
 using Service.Liquidity.ConverterMarkups.Grpc.Models;
@@ -12,8 +13,11 @@ namespace Service.Liquidity.ConverterMarkups.Grpc
         Task<GetAutoMarkupsResponse> GetAutoMarkupStatusAsync();
 
         //Settings
+        [OperationContract, Obsolete]
+        Task<AutoMarkupSettingsResponse> ActivateAutoMarkupSettingsAsync(AutoMarkupSettingsRequest request);
+        
         [OperationContract]
-        Task<ActivateAutoMarkupSettingsResponse> ActivateAutoMarkupSettingsAsync(ActivateAutoMarkupSettingsRequest request);
+        Task<ActivateAutoMarkupSettingsResponse> ActivateAutoMarkupAsync(ActivateAutoMarkupSettingsRequest request);
 
         [OperationContract]
         Task<UpsertAutoMarkupSettingsResponse> UpsertAutoMarkupSettingsAsync(UpsertAutoMarkupSettingsRequest request);
