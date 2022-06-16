@@ -6,6 +6,7 @@ using Service.Liquidity.ConverterMarkups.Domain.Models;
 using Service.Liquidity.ConverterMarkups.Grpc;
 using Service.Liquidity.ConverterMarkups.Jobs;
 using Service.Liquidity.ConverterMarkups.Services;
+using Service.Liquidity.Velocity.Client;
 
 namespace Service.Liquidity.ConverterMarkups.Modules
 {
@@ -13,6 +14,8 @@ namespace Service.Liquidity.ConverterMarkups.Modules
     {
         protected override void Load(ContainerBuilder builder)
         {
+            builder.RegisterMarkupVelocityService(Program.Settings.LiquidityVelocityGrpcServiceUrl);
+
             var noSqlClient = builder.CreateNoSqlClient(Program.Settings.MyNoSqlReaderHostPort, Program.LogFactory);
             builder.RegisterMyNoSqlReader<AssetNoSqlEntity>(noSqlClient, AssetNoSqlEntity.TableName);
             builder.RegisterMyNoSqlReader<AutoMarkupNoSqlEntity>(noSqlClient, AutoMarkupNoSqlEntity.TableName);
@@ -34,6 +37,8 @@ namespace Service.Liquidity.ConverterMarkups.Modules
             builder.RegisterType<AutoMarkupBackgroundJob>().As<IStartable>().As<IDisposable>().AutoActivate().SingleInstance();
             builder.RegisterType<ConverterMarkupService>().As<IConverterMarkupService>();
             builder.RegisterType<OverviewHandler>().AsSelf().SingleInstance();
+            builder.RegisterType<ActivateAutoMarkupJob>().As<IStartable>().AutoActivate().SingleInstance();
+
         }
     }
 }

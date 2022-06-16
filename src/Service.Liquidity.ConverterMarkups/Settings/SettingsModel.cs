@@ -19,5 +19,8 @@ namespace Service.Liquidity.ConverterMarkups.Settings
 
         [YamlProperty("ConverterMarkups.MyNoSqlReaderHostPort")]
         public string MyNoSqlReaderHostPort { get; set; }
+        
+        [YamlProperty("ConverterMarkups.LiquidityVelocityGrpcServiceUrl")]
+        public string LiquidityVelocityGrpcServiceUrl { get; set; }
     }
 }
