@@ -200,7 +200,7 @@ namespace Service.Liquidity.ConverterMarkups.Services
             }
         }
 
-        public async Task<ActivateAutoMarkupSettingsResponse> ActivateAutoMarkupAsync(ActivateAutoMarkupSettingsRequest request)
+        public async Task<ActivateAutoMarkupSettingsResponse> ActivateAutoMarkupAsync(ActivateAutoMarkupRequest request)
         {
             try
             {
