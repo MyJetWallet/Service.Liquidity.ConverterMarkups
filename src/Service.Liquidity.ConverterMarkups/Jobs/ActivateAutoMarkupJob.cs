@@ -62,7 +62,9 @@ namespace Service.Liquidity.ConverterMarkups.Jobs
                     return;
                 }
 
-                foreach (var setting in settings.Where(s => s.VelocityActivationCondition != 0))
+                foreach (var setting in settings.Where(s => s.VelocityActivationCondition != 0 &&
+                                                            s.DurationMinutes != 0 &&
+                                                            s.IncreasePercent != 0))
                 {
                     var velocity = velocityResp.Items?.FirstOrDefault(i => i.Asset == setting.FromAsset);
 
