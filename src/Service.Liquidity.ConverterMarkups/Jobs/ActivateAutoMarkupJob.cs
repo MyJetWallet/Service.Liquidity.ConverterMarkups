@@ -68,7 +68,7 @@ namespace Service.Liquidity.ConverterMarkups.Jobs
                 {
                     var velocity = velocityResp.Items?.FirstOrDefault(i => i.Asset == setting.FromAsset);
 
-                    if (velocity != null && velocity.Velocity >= setting.VelocityActivationCondition)
+                    if (velocity != null && Math.Abs(velocity.Velocity) >= setting.VelocityActivationCondition)
                     {
                         var pk = AutoMarkupNoSqlEntity.GeneratePartitionKey(setting.ProfileId);
                         var rk = AutoMarkupNoSqlEntity.GenerateRowKey(setting.FromAsset, setting.ToAsset);
